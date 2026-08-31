@@ -21,10 +21,10 @@ each completed within the 15-minute limit.]
 The hash output has \(2^{48}\) possible values. Searching for a collision by
 fixing one file and looking for a particular hash would require, on average,
 an impractical number of trials. A birthday attack instead generates hashes
-for both files. After approximately \(O(\sqrt{2^{48}}) = O(2^{24})\) trials,
-there is a substantial probability that a hash from one set matches a hash
-from the other. The number of trials required for approximately 50% collision
-probability is \(\sqrt{2 \ln(2) \cdot 2^{48}} \approx 2.0 \times 10^7\),
+for both files. After approximately \(O(\sqrt{2^{48}}) = O(2^{24})\) trials per
+side, there is a substantial probability that a hash from one set matches a
+hash from the other. The number of trials required for approximately 50%
+collision probability is \(\sqrt{2 \ln(2) \cdot 2^{48}} \approx 2.0 \times 10^7\),
 although the exact result varies between runs.
 
 The attack uses two phases. In the first phase, the program inserts a sequence
@@ -44,14 +44,17 @@ is `2^25` entries for `2^24` file-A trials, giving a maximum planned load of
 50%. This leaves space for probing while keeping the structure simple and
 fast.
 
-**Search details:** Both phases traverse nonces sequentially from zero through
-`2^24 - 1`. For every file-A nonce, the nonce is inserted into the header of a
-private working copy, hashed, and stored with its hash. File-B trials are then
-hashed and looked up in the table. A successful lookup returns the file-A
-nonce. If allocation, table initialization, or insertion fails, the attack
-returns failure after releasing its resources; no unverified result is
-returned. The caller performs a final hash verification before writing solved
-files.
+**Search details:** File A is traversed sequentially from nonce zero through
+`2^24 - 1` and inserted into the table. File B is then streamed sequentially
+from nonce zero through `8 * 2^24 - 1`, without rebuilding the file-A table.
+For two independent sets of sizes `N_A` and `N_B`, the expected number of
+cross-matches is `lambda = N_A N_B / 2^48`. Thus, the initial `N_A = N_B =
+2^24` window has approximate success probability `1 - e^-1 = 63.2%`, while
+the eight-window B extension has `lambda = 8` and approximate success
+probability `1 - e^-8 = 99.97%`. If allocation, table initialization, or
+insertion fails, the attack returns failure after releasing its resources; no
+unverified result is returned. The caller performs a final hash verification
+before writing solved files.
 
 ## 3. Parallelisation and Synchronisation
 
@@ -127,9 +130,12 @@ but can be significant for the larger provided inputs.
 lengths at the cost of allocating twice as many slots as the planned number of
 file-A trials. Partition locks add phase-A synchronization, but avoid the
 `O(T)` phase-B lookup that occurred with separate thread-owned tables. The
-fixed `2^24` trial window keeps the birthday-attack work bounded; if no match
-is found in that window, the function reports failure rather than silently
-returning an invalid collision.
+file-A table is built only once while file-B trials stream through eight
+consecutive `2^24`-nonce windows. This increases the phase-B work and therefore
+the time required by an unsuccessful search, but it reuses the same table and
+adds no table memory. If no match is found in the bounded four-window search,
+the function reports failure rather than silently returning an invalid
+collision.
 
 ## 5. Performance Results and Analysis
 

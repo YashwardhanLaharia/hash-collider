@@ -14,6 +14,7 @@
 #define STUDENT_ID "24295462"
 /* TEMPORARY LOCAL DEBUG OUTPUT: remove this and the progress blocks below before submission. */
 #define PROGRESS_INTERVAL (UINT64_C(1) << 18)
+#define B_TRIAL_COUNT (UINT64_C(8) * TRIAL_COUNT)
 
 static size_t partition_for_hash(uint64_t hash, int partition_count)
 {
@@ -114,14 +115,15 @@ int birthday_attack_parallel(const unsigned char *file_a, size_t length_a,
                     elapsed = omp_get_wtime() - start_time;
                     rate = (elapsed > 0.0) ? (double) progress / elapsed : 0.0;
                     eta = (rate > 0.0)
-                              ? (double) (2 * TRIAL_COUNT - progress) / rate
+                              ? (double) (TRIAL_COUNT + B_TRIAL_COUNT - progress) /
+                                    rate
                               : 0.0;
 #pragma omp critical(progress_output)
                     {
                         fprintf(stderr,
                                 "\rparallel attack: phase A, %6.2f%%, ETA %.1fs",
                                 100.0 * (double) progress /
-                                    (double) (2 * TRIAL_COUNT),
+                                    (double) (TRIAL_COUNT + B_TRIAL_COUNT),
                                 eta);
                         fflush(stderr);
                     }
@@ -132,7 +134,7 @@ int birthday_attack_parallel(const unsigned char *file_a, size_t length_a,
 #pragma omp barrier
         if (!atomic_load(&failed)) {
 #pragma omp for schedule(static)
-            for (nonce = 0; nonce < TRIAL_COUNT; ++nonce) {
+            for (nonce = 0; nonce < B_TRIAL_COUNT; ++nonce) {
                 size_t partition;
                 uint64_t progress;
 
@@ -167,14 +169,15 @@ int birthday_attack_parallel(const unsigned char *file_a, size_t length_a,
                     elapsed = omp_get_wtime() - start_time;
                     rate = (elapsed > 0.0) ? (double) progress / elapsed : 0.0;
                     eta = (rate > 0.0)
-                              ? (double) (2 * TRIAL_COUNT - progress) / rate
+                              ? (double) (TRIAL_COUNT + B_TRIAL_COUNT - progress) /
+                                    rate
                               : 0.0;
 #pragma omp critical(progress_output)
                     {
                         fprintf(stderr,
                                 "\rparallel attack: phase B, %6.2f%%, ETA %.1fs",
                                 100.0 * (double) progress /
-                                    (double) (2 * TRIAL_COUNT),
+                                    (double) (TRIAL_COUNT + B_TRIAL_COUNT),
                                 eta);
                         fflush(stderr);
                     }

@@ -10,6 +10,7 @@
 #include <string.h>
 
 #define TRIAL_COUNT (UINT64_C(1) << 24)
+#define B_TRIAL_COUNT (UINT64_C(8) * TRIAL_COUNT)
 #define TABLE_CAPACITY (UINT64_C(1) << 25)
 #define STUDENT_ID "24295462"
 /* TEMPORARY LOCAL DEBUG OUTPUT: remove this and the progress blocks below before submission. */
@@ -61,15 +62,19 @@ int birthday_attack_serial(const unsigned char *file_a, size_t length_a,
             completed = nonce_a + 1;
             elapsed = omp_get_wtime() - start_time;
             rate = (elapsed > 0.0) ? (double) completed / elapsed : 0.0;
-            eta = (rate > 0.0) ? (double) (2 * TRIAL_COUNT - completed) / rate : 0.0;
+            eta = (rate > 0.0)
+                      ? (double) (TRIAL_COUNT + B_TRIAL_COUNT - completed) / rate
+                      : 0.0;
             fprintf(stderr, "\rserial attack: phase A, %6.2f%%, ETA %.1fs",
-                    100.0 * (double) completed / (double) (2 * TRIAL_COUNT), eta);
+                    100.0 * (double) completed /
+                        (double) (TRIAL_COUNT + B_TRIAL_COUNT),
+                    eta);
             fflush(stderr);
             progress_printed = 1;
         }
     }
 
-    for (nonce_b = 0; nonce_b < TRIAL_COUNT; ++nonce_b) {
+    for (nonce_b = 0; nonce_b < B_TRIAL_COUNT; ++nonce_b) {
         set_nonce(candidate_b, nonce_b);
         hash = toy_hash(candidate_b, length_b);
         if (collision_table_find(&table, hash, &matching_nonce_a)) {
@@ -82,9 +87,13 @@ int birthday_attack_serial(const unsigned char *file_a, size_t length_a,
             completed = TRIAL_COUNT + nonce_b + 1;
             elapsed = omp_get_wtime() - start_time;
             rate = (elapsed > 0.0) ? (double) completed / elapsed : 0.0;
-            eta = (rate > 0.0) ? (double) (2 * TRIAL_COUNT - completed) / rate : 0.0;
+            eta = (rate > 0.0)
+                      ? (double) (TRIAL_COUNT + B_TRIAL_COUNT - completed) / rate
+                      : 0.0;
             fprintf(stderr, "\rserial attack: phase B, %6.2f%%, ETA %.1fs",
-                    100.0 * (double) completed / (double) (2 * TRIAL_COUNT), eta);
+                    100.0 * (double) completed /
+                        (double) (TRIAL_COUNT + B_TRIAL_COUNT),
+                    eta);
             fflush(stderr);
             progress_printed = 1;
         }
