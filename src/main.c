@@ -17,7 +17,7 @@ static void print_usage(const char *program)
             "Usage: %s <file-a.pdf> <file-b.pdf> [options]\n"
             "Options:\n"
             "  --threads N        number of OpenMP threads (default: 1)\n"
-            "  --log              show attack progress (disabled by default)\n",
+            "  --progress         show attack progress (disabled by default)\n",
             program);
 }
 
@@ -92,7 +92,7 @@ int main(int argc, char **argv)
     int thread_count = 1;
     int i;
     int found;
-    int log_progress = 0;
+    int show_progress = 0;
     double start_time;
     double elapsed;
     collision_solution solution;
@@ -109,8 +109,8 @@ int main(int argc, char **argv)
                 fprintf(stderr, "Invalid thread count\n");
                 return EXIT_FAILURE;
             }
-        } else if (strcmp(argv[i], "--log") == 0) {
-            log_progress = 1;
+        } else if (strcmp(argv[i], "--progress") == 0) {
+            show_progress = 1;
         } else {
             print_usage(argv[0]);
             return EXIT_FAILURE;
@@ -135,10 +135,10 @@ int main(int argc, char **argv)
     start_time = omp_get_wtime();
     if (thread_count == 1) {
         found = birthday_attack_serial(file_a, length_a, file_b, length_b,
-                                       &solution, log_progress);
+                                       &solution, show_progress);
     } else {
         found = birthday_attack_parallel(file_a, length_a, file_b, length_b,
-                                         thread_count, &solution, log_progress);
+                                         thread_count, &solution, show_progress);
     }
     elapsed = omp_get_wtime() - start_time;
     if (!found) {

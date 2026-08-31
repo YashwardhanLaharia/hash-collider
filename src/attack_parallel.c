@@ -24,7 +24,7 @@ static size_t partition_for_hash(uint64_t hash, int partition_count)
 int birthday_attack_parallel(const unsigned char *file_a, size_t length_a,
                              const unsigned char *file_b, size_t length_b,
                              int thread_count, collision_solution *solution,
-                             int log_progress)
+                             int show_progress)
 {
     collision_table *tables;
     omp_lock_t *locks;
@@ -103,7 +103,7 @@ int birthday_attack_parallel(const unsigned char *file_a, size_t length_a,
                 }
                 omp_unset_lock(&locks[partition]);
 
-                if (log_progress && (nonce + 1) % PROGRESS_INTERVAL == 0) {
+                if (show_progress && (nonce + 1) % PROGRESS_INTERVAL == 0) {
                     double elapsed;
                     double rate;
                     double eta;
@@ -165,7 +165,7 @@ int birthday_attack_parallel(const unsigned char *file_a, size_t length_a,
                         }
                     }
 
-                    if (log_progress &&
+                    if (show_progress &&
                         (offset_b + 1) % PROGRESS_INTERVAL == 0) {
                         double elapsed;
                         double rate;

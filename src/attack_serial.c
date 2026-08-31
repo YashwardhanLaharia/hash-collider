@@ -18,7 +18,7 @@
 
 int birthday_attack_serial(const unsigned char *file_a, size_t length_a,
                            const unsigned char *file_b, size_t length_b,
-                           collision_solution *solution, int log_progress)
+                           collision_solution *solution, int show_progress)
 {
     unsigned char *candidate_a = NULL;
     unsigned char *candidate_b = NULL;
@@ -59,7 +59,7 @@ int birthday_attack_serial(const unsigned char *file_a, size_t length_a,
         if (!collision_table_insert(&table, hash, nonce_a)) {
             goto cleanup;
         }
-        if (log_progress && (nonce_a + 1) % PROGRESS_INTERVAL == 0) {
+        if (show_progress && (nonce_a + 1) % PROGRESS_INTERVAL == 0) {
             completed = nonce_a + 1;
             elapsed = omp_get_wtime() - start_time;
             rate = (elapsed > 0.0) ? (double) completed / elapsed : 0.0;
@@ -87,7 +87,7 @@ int birthday_attack_serial(const unsigned char *file_a, size_t length_a,
                 found = 1;
                 break;
             }
-            if (log_progress && (offset_b + 1) % PROGRESS_INTERVAL == 0) {
+            if (show_progress && (offset_b + 1) % PROGRESS_INTERVAL == 0) {
                 completed = offset_b + 1;
                 elapsed = omp_get_wtime() - start_time;
                 rate = (elapsed > 0.0) ? (double) completed / elapsed : 0.0;
