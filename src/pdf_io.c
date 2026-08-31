@@ -46,12 +46,16 @@ unsigned char *load_file(const char *path, size_t *length)
 int write_file(const char *path, const unsigned char *data, size_t length)
 {
     FILE *file = fopen(path, "wb");
+    int write_succeeded;
+    int close_succeeded;
 
     if (file == NULL) {
         fprintf(stderr, "Could not create '%s': %s\n", path, strerror(errno));
         return 0;
     }
-    if (fwrite(data, 1, length, file) != length || fclose(file) != 0) {
+    write_succeeded = fwrite(data, 1, length, file) == length;
+    close_succeeded = fclose(file) == 0;
+    if (!write_succeeded || !close_succeeded) {
         fprintf(stderr, "Could not write '%s'\n", path);
         return 0;
     }
