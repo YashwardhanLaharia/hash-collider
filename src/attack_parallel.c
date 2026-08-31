@@ -15,6 +15,8 @@
 /* Progress output is opt-in so benchmark runs remain quiet by default. */
 #define PROGRESS_INTERVAL (UINT64_C(1) << 18)
 #define B_BATCH_SIZE (UINT64_C(8) * TRIAL_COUNT)
+#define B_CHUNK_SIZE (UINT64_C(1) << 16)
+#define B_CHUNK_COUNT (B_BATCH_SIZE / B_CHUNK_SIZE)
 
 static size_t partition_for_hash(uint64_t hash, int partition_count)
 {
@@ -35,7 +37,7 @@ int birthday_attack_parallel(const unsigned char *file_a, size_t length_a,
     double start_time;
     int team_size = 0;
     int initialized_locks = 0;
-    int exhausted = 0;
+    int stop_search = 0;
 
     tables = calloc((size_t) thread_count, sizeof(*tables));
     locks = calloc((size_t) thread_count, sizeof(*locks));
@@ -139,71 +141,77 @@ int birthday_attack_parallel(const unsigned char *file_a, size_t length_a,
                 completed = 0;
                 start_time = omp_get_wtime();
             }
-            while (!atomic_load(&found) && !exhausted) {
-                uint64_t offset_b;
+            while (!stop_search) {
+                uint64_t chunk;
 
 #pragma omp for schedule(static)
-                for (offset_b = 0; offset_b < B_BATCH_SIZE; ++offset_b) {
-                    size_t partition;
+                for (chunk = 0; chunk < B_CHUNK_COUNT; ++chunk) {
+                    uint64_t offset_b;
                     uint64_t progress;
 
                     if (atomic_load(&found)) {
                         continue;
                     }
 
-                    nonce = batch_start + offset_b;
-                    set_nonce(candidate_b, nonce);
-                    hash = toy_hash(candidate_b, length_b);
-                    partition = partition_for_hash(hash, team_size);
-                    if (collision_table_find(&tables[partition], hash,
-                                             &matching_nonce_a)) {
-                        int expected = 0;
+                    for (offset_b = chunk * B_CHUNK_SIZE;
+                         offset_b < (chunk + 1) * B_CHUNK_SIZE &&
+                         !atomic_load(&found); ++offset_b) {
+                        size_t partition;
 
-                        if (atomic_compare_exchange_strong(&found, &expected, 1)) {
-                            solution->nonce_a = matching_nonce_a;
-                            solution->nonce_b = nonce;
+                        nonce = batch_start + offset_b;
+                        set_nonce(candidate_b, nonce);
+                        hash = toy_hash(candidate_b, length_b);
+                        partition = partition_for_hash(hash, team_size);
+                        if (collision_table_find(&tables[partition], hash,
+                                                 &matching_nonce_a)) {
+                            int expected = 0;
+
+                            if (atomic_compare_exchange_strong(&found, &expected,
+                                                               1)) {
+                                solution->nonce_a = matching_nonce_a;
+                                solution->nonce_b = nonce;
+                            }
                         }
-                    }
 
-                    if (show_progress &&
-                        (offset_b + 1) % PROGRESS_INTERVAL == 0) {
-                        double elapsed;
-                        double rate;
-                        double eta;
+                        if (show_progress &&
+                            (offset_b + 1) % PROGRESS_INTERVAL == 0) {
+                            double elapsed;
+                            double rate;
+                            double eta;
 
 #pragma omp atomic capture
-                        {
-                            completed += PROGRESS_INTERVAL;
-                            progress = completed;
-                        }
-                        elapsed = omp_get_wtime() - start_time;
-                        rate = (elapsed > 0.0) ? (double) progress / elapsed : 0.0;
-                        eta = (rate > 0.0)
-                                  ? (double) (B_BATCH_SIZE - progress) / rate
-                                  : 0.0;
+                            {
+                                completed += PROGRESS_INTERVAL;
+                                progress = completed;
+                            }
+                            elapsed = omp_get_wtime() - start_time;
+                            rate = (elapsed > 0.0) ? (double) progress / elapsed : 0.0;
+                            eta = (rate > 0.0)
+                                      ? (double) (B_BATCH_SIZE - progress) / rate
+                                      : 0.0;
 #pragma omp critical(progress_output)
-                        {
-                            fprintf(stderr,
-                                    "\rparallel attack: phase B from 0x%016llx, %6.2f%%, ETA %.1fs",
-                                    (unsigned long long) batch_start,
-                                    100.0 * (double) progress /
-                                        (double) B_BATCH_SIZE,
-                                    eta);
-                            fflush(stderr);
+                            {
+                                fprintf(stderr,
+                                        "\rparallel attack: phase B from 0x%016llx, %6.2f%%, ETA %.1fs",
+                                        (unsigned long long) batch_start,
+                                        100.0 * (double) progress /
+                                            (double) B_BATCH_SIZE,
+                                        eta);
+                                fflush(stderr);
+                            }
                         }
                     }
                 }
 
 #pragma omp single
                 {
-                    if (!atomic_load(&found)) {
-                        if (batch_start > UINT64_MAX - B_BATCH_SIZE) {
-                            exhausted = 1;
-                        } else {
-                            batch_start += B_BATCH_SIZE;
-                            completed = 0;
-                            start_time = omp_get_wtime();
-                        }
+                    if (atomic_load(&found) ||
+                        batch_start > UINT64_MAX - B_BATCH_SIZE) {
+                        stop_search = 1;
+                    } else {
+                        batch_start += B_BATCH_SIZE;
+                        completed = 0;
+                        start_time = omp_get_wtime();
                     }
                 }
             }
