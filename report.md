@@ -94,7 +94,11 @@ work and avoids the overhead of dynamic scheduling.
 writes the solution. Other threads observe the flag at subsequent file-B
 iterations and skip remaining trials. The parallel-region exit ensures that
 all working buffers and partition resources are released before the function
-returns.
+returns. OpenMP worksharing loops do not support an early `break` that exits
+the loop for every thread, so threads still advance through their assigned
+static iterations after a match is found. The atomic flag makes those
+iterations skip hashing and lookup; only the small loop-control overhead
+remains.
 
 The program verifies that a discovered pair of nonces produces a genuine
 collision: `toy_hash` is recomputed on the final, modified files and the two
@@ -133,7 +137,7 @@ file-A trials. Partition locks add phase-A synchronization, but avoid the
 file-A table is built only once while file-B trials stream through eight
 consecutive `2^24`-nonce windows. This increases the phase-B work and therefore
 the time required by an unsuccessful search, but it reuses the same table and
-adds no table memory. If no match is found in the bounded four-window search,
+adds no table memory. If no match is found in the bounded eight-window search,
 the function reports failure rather than silently returning an invalid
 collision.
 
