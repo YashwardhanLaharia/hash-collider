@@ -32,8 +32,8 @@ are intentionally left as TODOs for implementation.
 - [ ] Benchmark each pair across thread counts (e.g. 1/2/4/8/16/32/64/96)
       and record raw timings for the report.
 - [ ] Verify every solved pair independently, e.g.
-      `python3 src/check_toy_hash.py solved_1_kilo_a.pdf` matches
-      `solved_1_kilo_b.pdf`.
+      `python3 src/check_toy_hash.py solved/solved_1_kilo_a.pdf` matches
+      `solved/solved_1_kilo_b.pdf`.
 - [ ] Write the 1,000 +/- 100 word report (PDF): birthday-attack algorithm and
       collision-detection data structure, OpenMP parallelisation and
       race-condition management, memory footprint and trade-offs, and
@@ -64,8 +64,8 @@ Options:
 
 The student number (`24295462`) is hardcoded as the `STUDENT_ID` macro in
 `src/main.c` and is written into every solved file's header. Solved files are
-written to the current directory as `solved_<input-name>`, e.g.
-`example/example_a.pdf` produces `solved_example_a.pdf`.
+written to the `solved/` directory as `solved_<input-name>`, e.g.
+`example/example_a.pdf` produces `solved/solved_example_a.pdf`.
 
 For example:
 
@@ -73,4 +73,4 @@ For example:
 ./collider example/example_a.pdf example/example_b.pdf --threads 8
 ```
 
-writes `solved_example_a.pdf` and `solved_example_b.pdf`.
+writes `solved/solved_example_a.pdf` and `solved/solved_example_b.pdf`.

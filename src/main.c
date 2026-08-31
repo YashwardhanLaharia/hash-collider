@@ -8,6 +8,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/stat.h>
 
 #define STUDENT_ID "24295462"
 
@@ -28,13 +29,23 @@ static char *make_solved_path(const char *input)
     char *path;
 
     base = (base == NULL) ? input : base + 1;
-    length = strlen(base) + sizeof("solved_");
+    length = strlen(base) + sizeof("solved/solved_");
     path = malloc(length);
     if (path == NULL) {
         return NULL;
     }
-    snprintf(path, length, "solved_%s", base);
+    snprintf(path, length, "solved/solved_%s", base);
     return path;
+}
+
+static int ensure_solved_directory(void)
+{
+    if (mkdir("solved", 0755) != 0 && errno != EEXIST) {
+        fprintf(stderr, "Could not create solved output directory: %s\n",
+                strerror(errno));
+        return 0;
+    }
+    return 1;
 }
 
 static int parse_positive_int(const char *text, int *value)
@@ -160,6 +171,11 @@ int main(int argc, char **argv)
     set_student_number(file_a, STUDENT_ID);
     set_student_number(file_b, STUDENT_ID);
 
+    if (!ensure_solved_directory()) {
+        free(file_a);
+        free(file_b);
+        return EXIT_FAILURE;
+    }
     output_a = make_solved_path(argv[1]);
     output_b = make_solved_path(argv[2]);
     if (output_a == NULL || output_b == NULL) {
