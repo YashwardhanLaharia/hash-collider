@@ -34,13 +34,24 @@ and queries the structure. A matching hash supplies candidate nonces for the
 two files. The program then applies both nonces and recomputes `toy_hash` on
 the complete modified files before writing the solved outputs.
 
-**Collision-detection structure:** [TBD: describe the final data structure,
-including its representation, hash-index calculation, collision handling,
-capacity/load-factor choice, and why it was selected.]
+**Collision-detection structure:** The implementation uses the supplied
+open-addressing `collision_table`. Each entry stores a 64-bit hash, the
+associated 64-bit nonce, and an occupancy flag. The table index multiplies the
+hash by the 64-bit golden-ratio constant `11400714819323198485` and masks with
+`capacity - 1`; therefore, capacities are powers of two. Collisions are
+resolved by linear probing. In the serial implementation, the table capacity
+is `2^25` entries for `2^24` file-A trials, giving a maximum planned load of
+50%. This leaves space for probing while keeping the structure simple and
+fast.
 
-**Search details:** [TBD: state the nonce traversal order, the number of
-trials used in each phase, and how table exhaustion or a failed search is
-handled.]
+**Search details:** Both phases traverse nonces sequentially from zero through
+`2^24 - 1`. For every file-A nonce, the nonce is inserted into the header of a
+private working copy, hashed, and stored with its hash. File-B trials are then
+hashed and looked up in the table. A successful lookup returns the file-A
+nonce. If allocation, table initialization, or insertion fails, the attack
+returns failure after releasing its resources; no unverified result is
+returned. The caller performs a final hash verification before writing solved
+files.
 
 ## 3. Parallelisation and Synchronisation
 
@@ -50,23 +61,36 @@ OpenMP to distribute independent nonce trials across threads. Each call to
 parallelising independent nonce trials and the collision-detection logic
 rather than modifying the hash function itself.
 
-**Nonce assignment:** [TBD: explain how nonce values are divided between
-threads, whether scheduling is static or dynamic, and how duplicate trials are
-prevented.]
+**Nonce assignment:** The parallel implementation uses `omp for schedule(static)`
+for both phases. Each nonce in the range `0` through `2^24 - 1` is assigned to
+exactly one thread, so duplicate trials are not generated. During phase A,
+each thread inserts into its own table. The per-thread capacity is the next
+power of two at least twice the thread's share of the file-A trials.
 
-**Shared collision-detection strategy:** [TBD: describe the strategy actually
-implemented for table insertion and lookup. Explain exactly which operations
-are shared, which synchronization primitives or ownership rules protect them,
-and how the strategy avoids data races.]
+**Shared collision-detection strategy:** The tables are thread-local during
+insertion and are not accessed by another thread in that phase. A barrier
+separates insertion from lookup. During phase B, all tables are read-only, so
+threads can safely search every table concurrently without locks. The only
+shared mutable search state is the `found` flag, which uses a C11 atomic
+compare-and-exchange. The winning thread publishes the nonce pair, while the
+parallel region's completion provides the synchronization before the caller
+uses the result.
 
-**Design rationale:** [TBD: explain why this strategy was chosen over the
-available alternatives, such as critical sections, atomics, thread-local
-tables with merging, or a partitioned table. Discuss synchronization overhead
-and possible contention.]
+**Design rationale:** Thread-local tables avoid placing a critical section
+around every insertion, which would serialize the most frequent table
+operation. They also avoid concurrent writes to open-addressing table entries.
+The cost is additional table memory and a lookup over all thread-local tables
+for each file-B hash. Since the tables are immutable during phase B, that
+lookup has no synchronization contention. The static schedule is appropriate
+because each trial performs approximately the same amount of work and avoids
+the overhead of dynamic scheduling.
 
-**Termination:** [TBD: explain how one thread publishes a successful
-collision, how other threads observe the result, and how unnecessary work is
-stopped safely.]
+**Termination:** When a thread finds a matching hash, it atomically changes
+`found` from zero to one. Only the thread that succeeds in this operation
+writes the solution. Other threads periodically observe the flag and skip
+remaining file-B trials, while the OpenMP barrier and parallel-region exit
+ensure that all thread-local resources are released before the function
+returns.
 
 The program verifies that a discovered pair of nonces produces a genuine
 collision: `toy_hash` is recomputed on the final, modified files and the two
@@ -86,14 +110,27 @@ M \approx C \times (\text{hash bytes} + \text{nonce bytes} +
 where \(C\) is the allocated capacity. The two input files and temporary
 verification buffers add comparatively small fixed costs.
 
-**Final memory footprint:** [TBD: give the table capacity, entry size,
-number of tables if applicable, total memory usage, and the basis for those
-values.]
+**Final memory footprint:** The serial table allocates `2^25` entries. On the
+target 64-bit build, `sizeof(collision_entry)` is 24 bytes because the 8-byte
+hash, 8-byte nonce, and occupancy field are aligned within the structure. The
+serial table therefore uses approximately 805,306,368 bytes (768 MiB), not
+including the two working file copies. In the parallel implementation, every
+thread allocates one table sized for its share of the file-A trials. For a
+thread count `T`, each table has capacity
+`next_power_of_two(2 * ceil(2^24 / T))`; the total is the sum of these per-thread
+capacities multiplied by the entry size. The parallel working file copies add
+two file buffers per thread; these are minor for the small test PDFs but can be
+significant for the larger provided inputs.
 
-**Trade-offs:** [TBD: explain the chosen capacity/load factor and the balance
-between memory consumption, cache behaviour, probe length, synchronization,
-and search speed. If thread-local or partitioned structures are used, explain
-the additional memory cost and why it is worthwhile.]
+**Trade-offs:** The serial table's 50% planned load factor reduces linear-probe
+lengths at the cost of allocating twice as many slots as the planned number of
+file-A trials. Thread-local tables remove insertion locks and make phase-B
+reads safe, but power-of-two rounding can make the parallel allocation larger
+than the serial table for some thread counts. This memory cost is exchanged
+for less synchronization and better parallel throughput. The current fixed
+`2^24` trial window keeps the birthday-attack work bounded; if no match is
+found in that window, the function reports failure rather than silently
+returning an invalid collision.
 
 ## 5. Performance Results and Analysis
 

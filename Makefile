@@ -29,7 +29,7 @@ src/attack_serial.o: src/attack_serial.c src/attack_serial.h \
 	$(CC) $(CFLAGS) -c -o $@ $<
 
 src/attack_parallel.o: src/attack_parallel.c src/attack_parallel.h \
-	src/collider_types.h src/table.h src/toy_hash.h
+	src/collider_types.h src/pdf_io.h src/table.h src/toy_hash.h
 	$(CC) $(CFLAGS) -c -o $@ $<
 
 src/toy_hash.o: src/toy_hash.c src/toy_hash.h
