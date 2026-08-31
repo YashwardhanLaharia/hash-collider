@@ -5,11 +5,13 @@
 
 ## 1. Introduction
 
-This project searches for two different nonce values, one for each of two PDF
-files, that produce the same output from the intentionally weak 48-bit
-`toy_hash` function. The six provided file pairs have varying difficulty. The
-implemented program uses a birthday attack, first generating hashes for one
-file and storing them, then searching for a matching hash for the other file.
+The task is to develop a parallel OpenMP program to brute-force collisions for
+`toy_hash`, an intentionally weak 48-bit hash function based on FNV-1a and
+MurmurHash3. For each pair of files, the program must find two nonces that,
+when inserted into the file headers, cause the files to produce the same hash.
+The six provided file pairs have varying difficulty. The implemented program
+uses a birthday attack, first generating hashes for one file and storing them,
+then searching for a matching hash for the other file.
 
 **Overall result:** [TBD: state whether all six pairs were solved and whether
 each completed within the 15-minute limit.]
@@ -43,10 +45,10 @@ handled.]
 ## 3. Parallelisation and Synchronisation
 
 The serial attack provides the correctness baseline. The parallel attack uses
-OpenMP to distribute independent nonce trials across threads. Each trial
-modifies a private in-memory copy or otherwise avoids changing shared file
-bytes, because each call to `toy_hash` is treated as sequential and the
-parallelism comes from independent trials.
+OpenMP to distribute independent nonce trials across threads. Each call to
+`toy_hash` is treated as sequential; the implementation focuses on
+parallelising independent nonce trials and the collision-detection logic
+rather than modifying the hash function itself.
 
 **Nonce assignment:** [TBD: explain how nonce values are divided between
 threads, whether scheduling is static or dynamic, and how duplicate trials are
@@ -66,9 +68,9 @@ and possible contention.]
 collision, how other threads observe the result, and how unnecessary work is
 stopped safely.]
 
-After a candidate is found, the program performs a final verification before
-writing either output file. This verification recomputes both complete file
-hashes and accepts the result only when the two 48-bit values are equal.
+The program verifies that a discovered pair of nonces produces a genuine
+collision: `toy_hash` is recomputed on the final, modified files and the two
+hashes must match before any solved file is written.
 
 ## 4. Memory Usage and Trade-offs
 
@@ -95,11 +97,13 @@ the additional memory cost and why it is worthwhile.]
 
 ## 5. Performance Results and Analysis
 
-The search timer measures only the search and collision-detection phase. File
-loading, output, and final verification are excluded. Measurements were taken
-on [TBD: Kaya node specification, compiler version, and OpenMP/compiler
-details]. Each configuration was run [TBD: number of repetitions and summary
-statistic used].
+Timing covers only the search and collision-detection portion of the program,
+excluding file I/O. The parallel implementation must be run on Kaya while
+varying the number of threads, and each provided pair must be timed. The job
+must complete within 15 minutes per pair on a single Kaya node using up to 96
+cores. Measurements were taken on [TBD: Kaya node specification, compiler
+version, and OpenMP/compiler details]. Each configuration was run [TBD: number
+of repetitions and summary statistic used].
 
 ### 5.1 Completion Results
 
