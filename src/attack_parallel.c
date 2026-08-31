@@ -12,7 +12,7 @@
 
 #define TRIAL_COUNT (UINT64_C(1) << 24)
 #define STUDENT_ID "24295462"
-/* TEMPORARY LOCAL DEBUG OUTPUT: remove this and the progress blocks below before submission. */
+/* Progress output is opt-in so benchmark runs remain quiet by default. */
 #define PROGRESS_INTERVAL (UINT64_C(1) << 18)
 #define B_BATCH_SIZE (UINT64_C(8) * TRIAL_COUNT)
 
@@ -23,7 +23,8 @@ static size_t partition_for_hash(uint64_t hash, int partition_count)
 
 int birthday_attack_parallel(const unsigned char *file_a, size_t length_a,
                              const unsigned char *file_b, size_t length_b,
-                             int thread_count, collision_solution *solution)
+                             int thread_count, collision_solution *solution,
+                             int log_progress)
 {
     collision_table *tables;
     omp_lock_t *locks;
@@ -44,7 +45,6 @@ int birthday_attack_parallel(const unsigned char *file_a, size_t length_a,
         return 0;
     }
 
-    /* TEMPORARY LOCAL DEBUG OUTPUT: remove before submission. */
     start_time = omp_get_wtime();
 
     /* Hash partitions are locked during insertion and become read-only after
@@ -103,8 +103,7 @@ int birthday_attack_parallel(const unsigned char *file_a, size_t length_a,
                 }
                 omp_unset_lock(&locks[partition]);
 
-                /* TEMPORARY LOCAL DEBUG OUTPUT: remove before submission. */
-                if ((nonce + 1) % PROGRESS_INTERVAL == 0) {
+                if (log_progress && (nonce + 1) % PROGRESS_INTERVAL == 0) {
                     double elapsed;
                     double rate;
                     double eta;
@@ -166,8 +165,8 @@ int birthday_attack_parallel(const unsigned char *file_a, size_t length_a,
                         }
                     }
 
-                    /* TEMPORARY LOCAL DEBUG OUTPUT: remove before submission. */
-                    if ((offset_b + 1) % PROGRESS_INTERVAL == 0) {
+                    if (log_progress &&
+                        (offset_b + 1) % PROGRESS_INTERVAL == 0) {
                         double elapsed;
                         double rate;
                         double eta;

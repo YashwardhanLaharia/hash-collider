@@ -13,12 +13,12 @@
 #define B_BATCH_SIZE (UINT64_C(8) * TRIAL_COUNT)
 #define TABLE_CAPACITY (UINT64_C(1) << 25)
 #define STUDENT_ID "24295462"
-/* TEMPORARY LOCAL DEBUG OUTPUT: remove this and the progress blocks below before submission. */
+/* Progress output is opt-in so benchmark runs remain quiet by default. */
 #define PROGRESS_INTERVAL (UINT64_C(1) << 20)
 
 int birthday_attack_serial(const unsigned char *file_a, size_t length_a,
                            const unsigned char *file_b, size_t length_b,
-                           collision_solution *solution)
+                           collision_solution *solution, int log_progress)
 {
     unsigned char *candidate_a = NULL;
     unsigned char *candidate_b = NULL;
@@ -52,7 +52,6 @@ int birthday_attack_serial(const unsigned char *file_a, size_t length_a,
         goto cleanup;
     }
 
-    /* TEMPORARY LOCAL DEBUG OUTPUT: remove before submission. */
     start_time = omp_get_wtime();
     for (nonce_a = 0; nonce_a < TRIAL_COUNT; ++nonce_a) {
         set_nonce(candidate_a, nonce_a);
@@ -60,7 +59,7 @@ int birthday_attack_serial(const unsigned char *file_a, size_t length_a,
         if (!collision_table_insert(&table, hash, nonce_a)) {
             goto cleanup;
         }
-        if ((nonce_a + 1) % PROGRESS_INTERVAL == 0) {
+        if (log_progress && (nonce_a + 1) % PROGRESS_INTERVAL == 0) {
             completed = nonce_a + 1;
             elapsed = omp_get_wtime() - start_time;
             rate = (elapsed > 0.0) ? (double) completed / elapsed : 0.0;
@@ -88,7 +87,7 @@ int birthday_attack_serial(const unsigned char *file_a, size_t length_a,
                 found = 1;
                 break;
             }
-            if ((offset_b + 1) % PROGRESS_INTERVAL == 0) {
+            if (log_progress && (offset_b + 1) % PROGRESS_INTERVAL == 0) {
                 completed = offset_b + 1;
                 elapsed = omp_get_wtime() - start_time;
                 rate = (elapsed > 0.0) ? (double) completed / elapsed : 0.0;

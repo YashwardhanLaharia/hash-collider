@@ -89,6 +89,9 @@ table memory.
 
 Timing covers the complete attack routine, including table setup and cleanup,
 but excludes input loading, final verification, and output writing.
+Progress logging is disabled by default, so benchmark runs avoid its extra
+timing and synchronization overhead. It can be enabled with `--log` for
+long-running interactive executions.
 Measurements used [TBD: Kaya node, compiler/OpenMP details, repetitions, and
 summary statistic]. Because every trial hashes the complete PDF, larger inputs
 should cost more per trial even though the expected trial count is governed by
