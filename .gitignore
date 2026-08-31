@@ -1,0 +1,15 @@
+*.o
+*.a
+*.so
+*.out
+*.exe
+toy_hash
+collider
+build/
+
+__pycache__/
+*.pyc
+
+.vscode/
+.idea/
+.DS_Store
