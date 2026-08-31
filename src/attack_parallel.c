@@ -13,7 +13,7 @@
 #define TRIAL_COUNT (UINT64_C(1) << 24)
 #define STUDENT_ID "24295462"
 /* Progress output is opt-in so benchmark runs remain quiet by default. */
-#define PROGRESS_INTERVAL (UINT64_C(1) << 18)
+#define PROGRESS_INTERVAL (UINT64_C(1) << 16)
 #define B_BATCH_SIZE (UINT64_C(8) * TRIAL_COUNT)
 #define B_CHUNK_SIZE (UINT64_C(1) << 16)
 #define B_CHUNK_COUNT (B_BATCH_SIZE / B_CHUNK_SIZE)
@@ -80,7 +80,6 @@ int birthday_attack_parallel(const unsigned char *file_a, size_t length_a,
             }
         }
 
-#pragma omp barrier
         if ((candidate_a == NULL && length_a != 0) ||
             (candidate_b == NULL && length_b != 0)) {
             atomic_store(&failed, 1);
@@ -117,16 +116,15 @@ int birthday_attack_parallel(const unsigned char *file_a, size_t length_a,
                     }
                     elapsed = omp_get_wtime() - start_time;
                     rate = (elapsed > 0.0) ? (double) progress / elapsed : 0.0;
-                    eta = (rate > 0.0)
-                              ? (double) (TRIAL_COUNT + B_BATCH_SIZE - progress) /
-                                    rate
-                              : 0.0;
+                    eta = (rate > 0.0) ? (double) (TRIAL_COUNT - progress) / rate
+                                       : 0.0;
 #pragma omp critical(progress_output)
                     {
                         fprintf(stderr,
-                                "\rparallel attack: phase A, %6.2f%%, ETA %.1fs",
-                                100.0 * (double) progress /
-                                    (double) (TRIAL_COUNT + B_BATCH_SIZE),
+                                "\rparallel attack: phase A, %llu/%llu A trials (%6.2f%%), ETA %.1fs",
+                                (unsigned long long) progress,
+                                (unsigned long long) TRIAL_COUNT,
+                                100.0 * (double) progress / (double) TRIAL_COUNT,
                                 eta);
                         fflush(stderr);
                     }
@@ -134,12 +132,15 @@ int birthday_attack_parallel(const unsigned char *file_a, size_t length_a,
             }
         }
 
-#pragma omp barrier
         if (!atomic_load(&failed)) {
 #pragma omp single
             {
                 completed = 0;
                 start_time = omp_get_wtime();
+                if (show_progress) {
+                    fprintf(stderr,
+                            "\nparallel attack: phase A complete; phase B batch starts at nonce 0\n");
+                }
             }
             while (!stop_search) {
                 uint64_t chunk;
@@ -192,8 +193,10 @@ int birthday_attack_parallel(const unsigned char *file_a, size_t length_a,
 #pragma omp critical(progress_output)
                             {
                                 fprintf(stderr,
-                                        "\rparallel attack: phase B from 0x%016llx, %6.2f%%, ETA %.1fs",
+                                        "\rparallel attack: phase B batch 0x%016llx, %llu/%llu B trials (%6.2f%%), ETA %.1fs",
                                         (unsigned long long) batch_start,
+                                        (unsigned long long) progress,
+                                        (unsigned long long) B_BATCH_SIZE,
                                         100.0 * (double) progress /
                                             (double) B_BATCH_SIZE,
                                         eta);
@@ -212,6 +215,11 @@ int birthday_attack_parallel(const unsigned char *file_a, size_t length_a,
                         batch_start += B_BATCH_SIZE;
                         completed = 0;
                         start_time = omp_get_wtime();
+                        if (show_progress) {
+                            fprintf(stderr,
+                                    "\nparallel attack: phase B continuing at nonce 0x%016llx\n",
+                                    (unsigned long long) batch_start);
+                        }
                     }
                 }
             }

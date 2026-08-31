@@ -5,11 +5,9 @@
 
 ## 1. Introduction
 
-The program uses a birthday attack to find nonces that make two PDFs collide
-under the supplied 48-bit `toy_hash`. It first stores hashes generated from
-file A, then searches hashes from file B for a cross-match. OpenMP distributes
-the independent nonce trials while a partitioned table supports concurrent
-collision detection.
+The program applies a birthday attack to find PDF nonces that collide under
+the supplied 48-bit `toy_hash`. It stores file-A hashes, then searches file-B
+hashes using OpenMP and a partitioned table.
 
 **Overall result:** [TBD: state whether all six pairs were solved and whether
 each completed within the 15-minute limit.]
@@ -65,9 +63,11 @@ searching `T` thread-owned tables. Per-partition locks avoid one global critical
 section, although phase-A hashes targeting the same partition can contend.
 Static scheduling has low overhead because trials perform similar work.
 
-**Termination:** After a match, other threads observe `found` and skip hashing
-on their remaining worksharing iterations. Only loop-control overhead remains
-until the phase barrier, after which resources are released normally.
+**Termination:** Phase B assigns `2^16`-nonce chunks. Threads check atomic
+`found` within each chunk and stop hashing after a winner publishes the
+solution. After the worksharing barrier, one thread updates `stop_search`; the
+implicit `single` barrier makes every thread enter and leave each batch
+consistently, avoiding divergent worksharing control flow.
 
 ## 4. Memory Usage and Trade-offs
 
@@ -88,10 +88,8 @@ table memory.
 ## 5. Performance Results and Analysis
 
 Timing covers the complete attack routine, including table setup and cleanup,
-but excludes input loading, final verification, and output writing.
-Progress logging is disabled by default, so benchmark runs avoid its extra
-timing and synchronization overhead. It can be enabled with `--progress` for
-long-running interactive executions.
+but excludes input loading, final verification, and output writing. Benchmark
+runs omit optional `--progress` reporting and its synchronization overhead.
 Measurements used [TBD: Kaya node, compiler/OpenMP details, repetitions, and
 summary statistic]. Because every trial hashes the complete PDF, larger inputs
 should cost more per trial even though the expected trial count is governed by

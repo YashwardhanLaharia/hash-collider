@@ -14,7 +14,7 @@
 #define TABLE_CAPACITY (UINT64_C(1) << 25)
 #define STUDENT_ID "24295462"
 /* Progress output is opt-in so benchmark runs remain quiet by default. */
-#define PROGRESS_INTERVAL (UINT64_C(1) << 20)
+#define PROGRESS_INTERVAL (UINT64_C(1) << 16)
 
 int birthday_attack_serial(const unsigned char *file_a, size_t length_a,
                            const unsigned char *file_b, size_t length_b,
@@ -63,12 +63,12 @@ int birthday_attack_serial(const unsigned char *file_a, size_t length_a,
             completed = nonce_a + 1;
             elapsed = omp_get_wtime() - start_time;
             rate = (elapsed > 0.0) ? (double) completed / elapsed : 0.0;
-            eta = (rate > 0.0)
-                       ? (double) (TRIAL_COUNT + B_BATCH_SIZE - completed) / rate
-                      : 0.0;
-            fprintf(stderr, "\rserial attack: phase A, %6.2f%%, ETA %.1fs",
-                    100.0 * (double) completed /
-                        (double) (TRIAL_COUNT + B_BATCH_SIZE),
+            eta = (rate > 0.0) ? (double) (TRIAL_COUNT - completed) / rate : 0.0;
+            fprintf(stderr,
+                    "\rserial attack: phase A, %llu/%llu A trials (%6.2f%%), ETA %.1fs",
+                    (unsigned long long) completed,
+                    (unsigned long long) TRIAL_COUNT,
+                    100.0 * (double) completed / (double) TRIAL_COUNT,
                     eta);
             fflush(stderr);
             progress_printed = 1;
@@ -76,6 +76,12 @@ int birthday_attack_serial(const unsigned char *file_a, size_t length_a,
     }
 
     while (!found) {
+        if (show_progress) {
+            fputc('\n', stderr);
+            fprintf(stderr,
+                    "serial attack: phase B batch starts at nonce 0x%016llx\n",
+                    (unsigned long long) batch_start);
+        }
         start_time = omp_get_wtime();
         for (offset_b = 0; offset_b < B_BATCH_SIZE; ++offset_b) {
             nonce_b = batch_start + offset_b;
@@ -95,8 +101,10 @@ int birthday_attack_serial(const unsigned char *file_a, size_t length_a,
                           ? (double) (B_BATCH_SIZE - completed) / rate
                           : 0.0;
                 fprintf(stderr,
-                        "\rserial attack: phase B from 0x%016llx, %6.2f%%, ETA %.1fs",
+                        "\rserial attack: phase B batch 0x%016llx, %llu/%llu B trials (%6.2f%%), ETA %.1fs",
                         (unsigned long long) batch_start,
+                        (unsigned long long) completed,
+                        (unsigned long long) B_BATCH_SIZE,
                         100.0 * (double) completed / (double) B_BATCH_SIZE,
                         eta);
                 fflush(stderr);
