@@ -63,33 +63,34 @@ rather than modifying the hash function itself.
 
 **Nonce assignment:** The parallel implementation uses `omp for schedule(static)`
 for both phases. Each nonce in the range `0` through `2^24 - 1` is assigned to
-exactly one thread, so duplicate trials are not generated. During phase A,
-each thread inserts into its own table. The per-thread capacity is the next
-power of two at least twice the thread's share of the file-A trials.
+exactly one thread, so duplicate trials are not generated. Hashes are routed to
+one of `T` shared partitions using `hash % T`. Each partition has capacity equal
+to the next power of two at least twice the expected share of the file-A trials.
 
-**Shared collision-detection strategy:** The tables are thread-local during
-insertion and are not accessed by another thread in that phase. A barrier
-separates insertion from lookup. During phase B, all tables are read-only, so
-threads can safely search every table concurrently without locks. The only
-shared mutable search state is the `found` flag, which uses a C11 atomic
-compare-and-exchange. The winning thread publishes the nonce pair, while the
-parallel region's completion provides the synchronization before the caller
-uses the result.
+**Shared collision-detection strategy:** The partitions are shared during
+phase A, so each partition has its own OpenMP lock. A thread locks the selected
+partition while performing an open-addressing insertion and unlocks it before
+continuing. This protects table entries and the shared entry count from races.
+A barrier separates insertion from lookup. During phase B, all partitions are
+read-only and the hash determines exactly one partition, so each trial performs
+one lookup rather than scanning all `T` tables. The only shared mutable search
+state is the `found` flag, which uses a C11 atomic compare-and-exchange. The
+winning thread publishes the nonce pair, while the parallel region's
+completion provides the synchronization before the caller uses the result.
 
-**Design rationale:** Thread-local tables avoid placing a critical section
-around every insertion, which would serialize the most frequent table
-operation. They also avoid concurrent writes to open-addressing table entries.
-The cost is additional table memory and a lookup over all thread-local tables
-for each file-B hash. Since the tables are immutable during phase B, that
-lookup has no synchronization contention. The static schedule is appropriate
-because each trial performs approximately the same amount of work and avoids
-the overhead of dynamic scheduling.
+**Design rationale:** Hash partitioning changes phase-B lookup from `O(T)` table
+searches per trial to one deterministic lookup. Per-partition locks avoid a
+single global critical section, although phase-A insertions can still contend
+when several hashes map to the same partition. Since the partitions are
+immutable during phase B, that phase has no lock contention. The static schedule
+is appropriate because each trial performs approximately the same amount of
+work and avoids the overhead of dynamic scheduling.
 
 **Termination:** When a thread finds a matching hash, it atomically changes
 `found` from zero to one. Only the thread that succeeds in this operation
-writes the solution. Other threads periodically observe the flag and skip
-remaining file-B trials, while the OpenMP barrier and parallel-region exit
-ensure that all thread-local resources are released before the function
+writes the solution. Other threads observe the flag at subsequent file-B
+iterations and skip remaining trials. The parallel-region exit ensures that
+all working buffers and partition resources are released before the function
 returns.
 
 The program verifies that a discovered pair of nonces produces a genuine
@@ -115,21 +116,19 @@ target 64-bit build, `sizeof(collision_entry)` is 24 bytes because the 8-byte
 hash, 8-byte nonce, and occupancy field are aligned within the structure. The
 serial table therefore uses approximately 805,306,368 bytes (768 MiB), not
 including the two working file copies. In the parallel implementation, every
-thread allocates one table sized for its share of the file-A trials. For a
-thread count `T`, each table has capacity
-`next_power_of_two(2 * ceil(2^24 / T))`; the total is the sum of these per-thread
-capacities multiplied by the entry size. The parallel working file copies add
-two file buffers per thread; these are minor for the small test PDFs but can be
-significant for the larger provided inputs.
+partition allocates one table sized for its share of the file-A trials. For a
+thread count `T`, each partition has capacity
+`next_power_of_two(2 * ceil(2^24 / T))`, so the total table capacity is `T`
+times that value, multiplied by the entry size. The parallel working file
+copies add two file buffers per thread; these are minor for the small test PDFs
+but can be significant for the larger provided inputs.
 
 **Trade-offs:** The serial table's 50% planned load factor reduces linear-probe
 lengths at the cost of allocating twice as many slots as the planned number of
-file-A trials. Thread-local tables remove insertion locks and make phase-B
-reads safe, but power-of-two rounding can make the parallel allocation larger
-than the serial table for some thread counts. This memory cost is exchanged
-for less synchronization and better parallel throughput. The current fixed
-`2^24` trial window keeps the birthday-attack work bounded; if no match is
-found in that window, the function reports failure rather than silently
+file-A trials. Partition locks add phase-A synchronization, but avoid the
+`O(T)` phase-B lookup that occurred with separate thread-owned tables. The
+fixed `2^24` trial window keeps the birthday-attack work bounded; if no match
+is found in that window, the function reports failure rather than silently
 returning an invalid collision.
 
 ## 5. Performance Results and Analysis
