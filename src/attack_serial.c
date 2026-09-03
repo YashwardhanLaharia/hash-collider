@@ -65,9 +65,7 @@ int birthday_attack_serial(const unsigned char *file_a, size_t length_a,
             rate = (elapsed > 0.0) ? (double) completed / elapsed : 0.0;
             eta = (rate > 0.0) ? (double) (TRIAL_COUNT - completed) / rate : 0.0;
             fprintf(stderr,
-                    "\rserial attack: phase A, %llu/%llu A trials (%6.2f%%), ETA %.1fs",
-                    (unsigned long long) completed,
-                    (unsigned long long) TRIAL_COUNT,
+                    "\rSerial: Phase A %6.2f%% ETA: %.1fs",
                     100.0 * (double) completed / (double) TRIAL_COUNT,
                     eta);
             fflush(stderr);
@@ -75,13 +73,13 @@ int birthday_attack_serial(const unsigned char *file_a, size_t length_a,
         }
     }
 
+    if (show_progress) {
+        fprintf(stderr, "\rSerial: Phase A 100.00%% ETA: 0.0s\n");
+        fprintf(stderr, "Phase A completed in %.3fs\n", omp_get_wtime() - start_time);
+        progress_printed = 1;
+    }
+
     while (!found) {
-        if (show_progress) {
-            fputc('\n', stderr);
-            fprintf(stderr,
-                    "serial attack: phase B batch starts at nonce 0x%016llx\n",
-                    (unsigned long long) batch_start);
-        }
         start_time = omp_get_wtime();
         for (offset_b = 0; offset_b < B_BATCH_SIZE; ++offset_b) {
             nonce_b = batch_start + offset_b;
@@ -101,10 +99,7 @@ int birthday_attack_serial(const unsigned char *file_a, size_t length_a,
                           ? (double) (B_BATCH_SIZE - completed) / rate
                           : 0.0;
                 fprintf(stderr,
-                        "\rserial attack: phase B batch 0x%016llx, %llu/%llu B trials (%6.2f%%), ETA %.1fs",
-                        (unsigned long long) batch_start,
-                        (unsigned long long) completed,
-                        (unsigned long long) B_BATCH_SIZE,
+                        "\rSerial: Phase B %6.2f%% ETA: %.1fs",
                         100.0 * (double) completed / (double) B_BATCH_SIZE,
                         eta);
                 fflush(stderr);
@@ -117,6 +112,11 @@ int birthday_attack_serial(const unsigned char *file_a, size_t length_a,
             }
             batch_start += B_BATCH_SIZE;
         }
+    }
+
+    if (show_progress) {
+        fprintf(stderr, "\nPhase B completed in %.3fs\n", omp_get_wtime() - start_time);
+        progress_printed = 1;
     }
 
 cleanup:

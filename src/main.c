@@ -194,13 +194,11 @@ int main(int argc, char **argv)
         free(file_b);
         return EXIT_FAILURE;
     }
-    printf("nonce A: 0x%016llx\n", (unsigned long long) solution.nonce_a);
-    printf("nonce B: 0x%016llx\n", (unsigned long long) solution.nonce_b);
-    printf("hash A:  %012llx\n", (unsigned long long) hash_a);
-    printf("hash B:  %012llx\n", (unsigned long long) hash_b);
-    printf("solved A: %s\n", output_a);
-    printf("solved B: %s\n", output_b);
-    printf("search time: %.6f seconds\n", elapsed);
+    printf("%s : 0x%016llx %012llx\n", argv[1],
+           (unsigned long long) solution.nonce_a, (unsigned long long) hash_a);
+    printf("%s : 0x%016llx %012llx\n", argv[2],
+           (unsigned long long) solution.nonce_b, (unsigned long long) hash_b);
+    printf("Total time: %.6f seconds\n", elapsed);
     free(output_a);
     free(output_b);
     free(file_a);
