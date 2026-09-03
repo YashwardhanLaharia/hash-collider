@@ -18,6 +18,15 @@
 #define B_CHUNK_SIZE (UINT64_C(1) << 16)
 #define B_CHUNK_COUNT (B_BATCH_SIZE / B_CHUNK_SIZE)
 
+#define CACHE_LINE 64
+
+/* Each partition lock lives in its own cache line so that threads locking
+   different partitions do not contend via false sharing on the lock array. */
+typedef struct {
+    omp_lock_t lock;
+    char padding[CACHE_LINE - sizeof(omp_lock_t)];
+} padded_lock;
+
 static size_t partition_for_hash(uint64_t hash, int partition_count)
 {
     return (size_t) (hash % (uint64_t) partition_count);
@@ -29,7 +38,7 @@ int birthday_attack_parallel(const unsigned char *file_a, size_t length_a,
                              int show_progress)
 {
     collision_table *tables;
-    omp_lock_t *locks;
+    padded_lock *locks;
     atomic_int failed = 0;
     atomic_int found = 0;
     uint64_t completed = 0;
@@ -75,7 +84,7 @@ int birthday_attack_parallel(const unsigned char *file_a, size_t length_a,
                 table_capacity <<= 1;
             }
             for (partition = 0; partition < team_size; ++partition) {
-                omp_init_lock(&locks[partition]);
+                omp_init_lock(&locks[partition].lock);
                 ++initialized_locks;
                 if (!collision_table_init(&tables[partition], table_capacity)) {
                     atomic_store(&failed, 1);
@@ -101,11 +110,11 @@ int birthday_attack_parallel(const unsigned char *file_a, size_t length_a,
                 set_nonce(candidate_a, nonce);
                 hash = toy_hash(candidate_a, length_a);
                 partition = partition_for_hash(hash, team_size);
-                omp_set_lock(&locks[partition]);
+                omp_set_lock(&locks[partition].lock);
                 if (!collision_table_insert(&tables[partition], hash, nonce)) {
                     atomic_store(&failed, 1);
                 }
-                omp_unset_lock(&locks[partition]);
+                omp_unset_lock(&locks[partition].lock);
 
                 if (show_progress && (nonce + 1) % PROGRESS_INTERVAL == 0) {
                     double elapsed;
@@ -237,7 +246,7 @@ int birthday_attack_parallel(const unsigned char *file_a, size_t length_a,
     for (int partition = 0; partition < team_size; ++partition) {
         collision_table_destroy(&tables[partition]);
         if (partition < initialized_locks) {
-            omp_destroy_lock(&locks[partition]);
+            omp_destroy_lock(&locks[partition].lock);
         }
     }
     free(tables);
