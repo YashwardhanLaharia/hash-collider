@@ -145,7 +145,7 @@ int birthday_attack_parallel(const unsigned char *file_a, size_t length_a,
             while (!stop_search) {
                 uint64_t chunk;
 
-#pragma omp for schedule(static)
+#pragma omp for schedule(guided)
                 for (chunk = 0; chunk < B_CHUNK_COUNT; ++chunk) {
                     uint64_t offset_b;
                     uint64_t progress;
@@ -155,8 +155,7 @@ int birthday_attack_parallel(const unsigned char *file_a, size_t length_a,
                     }
 
                     for (offset_b = chunk * B_CHUNK_SIZE;
-                         offset_b < (chunk + 1) * B_CHUNK_SIZE &&
-                         !atomic_load(&found); ++offset_b) {
+                         offset_b < (chunk + 1) * B_CHUNK_SIZE; ++offset_b) {
                         size_t partition;
 
                         nonce = batch_start + offset_b;
