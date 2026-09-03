@@ -35,6 +35,8 @@ int birthday_attack_parallel(const unsigned char *file_a, size_t length_a,
     uint64_t completed = 0;
     uint64_t batch_start = 0;
     double start_time;
+    double phase_a_time = 0.0;
+    double phase_b_time = 0.0;
     int team_size = 0;
     int initialized_locks = 0;
     int stop_search = 0;
@@ -51,7 +53,8 @@ int birthday_attack_parallel(const unsigned char *file_a, size_t length_a,
 
     /* Hash partitions are locked during insertion and become read-only after
        the phase barrier, so parallel lookups require no table locks. */
-#pragma omp parallel num_threads(thread_count) shared(team_size, completed)
+#pragma omp parallel num_threads(thread_count) \
+    shared(team_size, completed, phase_a_time, phase_b_time)
     {
         unsigned char *candidate_a = malloc(length_a);
         unsigned char *candidate_b = malloc(length_b);
@@ -136,10 +139,12 @@ int birthday_attack_parallel(const unsigned char *file_a, size_t length_a,
 #pragma omp single
             {
                 completed = 0;
+                phase_a_time = omp_get_wtime() - start_time;
                 start_time = omp_get_wtime();
                 if (show_progress) {
                     fprintf(stderr,
-                            "\nparallel attack: phase A complete; phase B batch starts at nonce 0\n");
+                            "\nparallel attack: phase A complete (%.6fs); phase B batch starts at nonce 0\n",
+                            phase_a_time);
                 }
             }
             while (!stop_search) {
@@ -222,6 +227,11 @@ int birthday_attack_parallel(const unsigned char *file_a, size_t length_a,
                     }
                 }
             }
+
+#pragma omp single
+            {
+                phase_b_time = omp_get_wtime() - start_time;
+            }
         }
 
         free(candidate_a);
@@ -239,5 +249,9 @@ int birthday_attack_parallel(const unsigned char *file_a, size_t length_a,
     }
     free(tables);
     free(locks);
+    if (atomic_load(&found)) {
+        fprintf(stderr, "parallel attack timing: phase A %.6fs, phase B %.6fs\n",
+                phase_a_time, phase_b_time);
+    }
     return !atomic_load(&failed) && atomic_load(&found);
 }
