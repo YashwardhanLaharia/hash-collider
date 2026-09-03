@@ -3,6 +3,7 @@
 *.so
 *.out
 *.exe
+*.err
 toy_hash
 collider
 build/
