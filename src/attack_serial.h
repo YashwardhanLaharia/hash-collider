@@ -7,6 +7,7 @@
 
 int birthday_attack_serial(const unsigned char *file_a, size_t length_a,
                            const unsigned char *file_b, size_t length_b,
-                           collision_solution *solution, int show_progress);
+                           collision_solution *solution, int show_progress,
+                           double *phase_a_time, double *phase_b_time);
 
 #endif

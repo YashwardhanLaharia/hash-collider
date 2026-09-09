@@ -35,7 +35,8 @@ static size_t partition_for_hash(uint64_t hash, int partition_count)
 int birthday_attack_parallel(const unsigned char *file_a, size_t length_a,
                              const unsigned char *file_b, size_t length_b,
                              int thread_count, collision_solution *solution,
-                             int show_progress)
+                             int show_progress, double *phase_a_output_time,
+                             double *phase_b_output_time)
 {
     collision_table *tables;
     padded_lock *locks;
@@ -46,9 +47,17 @@ int birthday_attack_parallel(const unsigned char *file_a, size_t length_a,
     double start_time;
     double phase_a_time = 0.0;
     double phase_b_time = 0.0;
+    double phase_b_start_time = 0.0;
     int team_size = 0;
     int initialized_locks = 0;
     int stop_search = 0;
+
+    if (phase_a_output_time != NULL) {
+        *phase_a_output_time = 0.0;
+    }
+    if (phase_b_output_time != NULL) {
+        *phase_b_output_time = 0.0;
+    }
 
     tables = calloc((size_t) thread_count, sizeof(*tables));
     locks = calloc((size_t) thread_count, sizeof(*locks));
@@ -148,6 +157,7 @@ int birthday_attack_parallel(const unsigned char *file_a, size_t length_a,
                 completed = 0;
                 phase_a_time = omp_get_wtime() - start_time;
                 start_time = omp_get_wtime();
+                phase_b_start_time = start_time;
                 if (show_progress) {
                     fprintf(stderr,
                             "\rParallel: Phase A 100.00%% ETA: 0.0s\n");
@@ -229,7 +239,7 @@ int birthday_attack_parallel(const unsigned char *file_a, size_t length_a,
 
 #pragma omp single
             {
-                phase_b_time = omp_get_wtime() - start_time;
+                phase_b_time = omp_get_wtime() - phase_b_start_time;
                 if (show_progress) {
                     fprintf(stderr, "\nPhase B completed in %.3fs\n", phase_b_time);
                 }
@@ -251,5 +261,11 @@ int birthday_attack_parallel(const unsigned char *file_a, size_t length_a,
     }
     free(tables);
     free(locks);
+    if (phase_a_output_time != NULL) {
+        *phase_a_output_time = phase_a_time;
+    }
+    if (phase_b_output_time != NULL) {
+        *phase_b_output_time = phase_b_time;
+    }
     return !atomic_load(&failed) && atomic_load(&found);
 }

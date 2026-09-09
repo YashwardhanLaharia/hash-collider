@@ -105,6 +105,8 @@ int main(int argc, char **argv)
     int found;
     int show_progress = 0;
     double start_time;
+    double phase_a_time;
+    double phase_b_time;
     double elapsed;
     collision_solution solution;
     uint64_t hash_a;
@@ -146,10 +148,12 @@ int main(int argc, char **argv)
     start_time = omp_get_wtime();
     if (thread_count == 1) {
         found = birthday_attack_serial(file_a, length_a, file_b, length_b,
-                                       &solution, show_progress);
+                                       &solution, show_progress, &phase_a_time,
+                                       &phase_b_time);
     } else {
         found = birthday_attack_parallel(file_a, length_a, file_b, length_b,
-                                         thread_count, &solution, show_progress);
+                                         thread_count, &solution, show_progress,
+                                         &phase_a_time, &phase_b_time);
     }
     elapsed = omp_get_wtime() - start_time;
     if (!found) {
@@ -198,6 +202,8 @@ int main(int argc, char **argv)
            (unsigned long long) solution.nonce_a, (unsigned long long) hash_a);
     printf("%s : 0x%016llx %012llx\n", argv[2],
            (unsigned long long) solution.nonce_b, (unsigned long long) hash_b);
+    printf("Phase A: %.6f seconds\n", phase_a_time);
+    printf("Phase B: %.6f seconds\n", phase_b_time);
     printf("Total time: %.6f seconds\n", elapsed);
     free(output_a);
     free(output_b);

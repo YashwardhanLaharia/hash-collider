@@ -18,7 +18,8 @@
 
 int birthday_attack_serial(const unsigned char *file_a, size_t length_a,
                            const unsigned char *file_b, size_t length_b,
-                           collision_solution *solution, int show_progress)
+                           collision_solution *solution, int show_progress,
+                           double *phase_a_time, double *phase_b_time)
 {
     unsigned char *candidate_a = NULL;
     unsigned char *candidate_b = NULL;
@@ -31,11 +32,21 @@ int birthday_attack_serial(const unsigned char *file_a, size_t length_a,
     uint64_t hash;
     uint64_t completed;
     double start_time;
+    double phase_a_start_time;
+    double phase_b_start_time;
     double elapsed;
     double rate;
     double eta;
     int progress_printed = 0;
     int found = 0;
+
+    if (phase_a_time != NULL) {
+        *phase_a_time = 0.0;
+    }
+    if (phase_b_time != NULL) {
+        *phase_b_time = 0.0;
+    }
+    phase_a_start_time = omp_get_wtime();
 
     candidate_a = malloc(length_a);
     candidate_b = malloc(length_b);
@@ -79,6 +90,11 @@ int birthday_attack_serial(const unsigned char *file_a, size_t length_a,
         progress_printed = 1;
     }
 
+    if (phase_a_time != NULL) {
+        *phase_a_time = omp_get_wtime() - phase_a_start_time;
+    }
+
+    phase_b_start_time = omp_get_wtime();
     while (!found) {
         start_time = omp_get_wtime();
         for (offset_b = 0; offset_b < B_BATCH_SIZE; ++offset_b) {
@@ -117,6 +133,10 @@ int birthday_attack_serial(const unsigned char *file_a, size_t length_a,
     if (show_progress) {
         fprintf(stderr, "\nPhase B completed in %.3fs\n", omp_get_wtime() - start_time);
         progress_printed = 1;
+    }
+
+    if (phase_b_time != NULL) {
+        *phase_b_time = omp_get_wtime() - phase_b_start_time;
     }
 
 cleanup:
