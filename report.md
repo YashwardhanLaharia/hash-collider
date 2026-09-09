@@ -9,8 +9,7 @@ The program applies a birthday attack to find PDF nonces that collide under
 the supplied 48-bit `toy_hash`. It stores file-A hashes, then searches file-B
 hashes using OpenMP and a partitioned table.
 
-**Overall result:** [TBD: state whether all six pairs were solved and whether
-each completed within the 15-minute limit.]
+**Overall result:** [TBD]
 
 ## 2. Birthday-Attack Algorithm
 
@@ -46,10 +45,12 @@ The serial attack is the correctness and speedup baseline. The OpenMP version
 parallelises independent nonce trials rather than the sequential operations
 inside each `toy_hash` call.
 
-**Work assignment:** Both phases use `omp for schedule(static)`, assigning each
-nonce once. Hashes are routed to one of `T` partitions using `hash % T`, where
-`T` is the actual OpenMP team size. Each partition is sized to the next power
-of two at least twice its expected share of A hashes.
+**Work assignment:** Phase A uses `omp for schedule(static)`, assigning each
+nonce once. Phase B uses guided scheduling over fixed `2^16`-nonce chunks so
+threads can stop between chunks after a collision is found. Hashes are routed
+to one of `T` partitions using `hash % T`, where `T` is the actual OpenMP team
+size. Each partition is sized to the next power of two at least twice its
+expected share of A hashes.
 
 **Synchronization:** During phase A, one OpenMP lock per partition protects
 entries and the shared entry count. A barrier completes every insertion before
@@ -61,7 +62,8 @@ caller.
 **Rationale:** Partitioning gives one deterministic phase-B lookup instead of
 searching `T` thread-owned tables. Per-partition locks avoid one global critical
 section, although phase-A hashes targeting the same partition can contend.
-Static scheduling has low overhead because trials perform similar work.
+Static scheduling has low overhead in Phase A because trials perform similar
+work; guided scheduling in Phase B helps manage early termination.
 
 **Termination:** Phase B assigns `2^16`-nonce chunks. Threads check atomic
 `found` within each chunk and stop hashing after a winner publishes the
@@ -90,48 +92,50 @@ table memory.
 Timing covers the complete attack routine, including table setup and cleanup,
 but excludes input loading, final verification, and output writing. Benchmark
 runs omit optional `--progress` reporting and its synchronization overhead.
-Measurements used [TBD: Kaya node, compiler/OpenMP details, repetitions, and
-summary statistic]. Because every trial hashes the complete PDF, larger inputs
-should cost more per trial even though the expected trial count is governed by
-the 48-bit collision probability.
+Measurements used [TBD] Kaya node, [TBD] compiler/OpenMP configuration,
+[TBD] repetitions, and the [TBD] summary statistic. Because every trial hashes
+the complete PDF, larger inputs should cost more per trial even though the
+expected trial count is governed by the 48-bit collision probability.
 
 ### 5.1 Completion Results
 
-| Pair | Threads | Trials [TBD] | Search time (s) | Completed within 15 min? |
-|---|---:|---:|---:|:---:|
-| `1_kilo` | [TBD] | [TBD] | [TBD] | [TBD] |
-| `2_mega` | [TBD] | [TBD] | [TBD] | [TBD] |
-| `3_giga` | [TBD] | [TBD] | [TBD] | [TBD] |
-| `4_tera` | [TBD] | [TBD] | [TBD] | [TBD] |
-| `5_peta` | [TBD] | [TBD] | [TBD] | [TBD] |
-| `6_exa` | [TBD] | [TBD] | [TBD] | [TBD] |
+The completion table reports the mean of [TBD] runs at 96 threads. Phase A,
+Phase B, and total times are measured by the program; the maximum total is used
+for the 15-minute check.
+
+| Pair | Threads | Phase A mean (s) | Phase B mean (s) | Total mean (s) | Maximum total (s) | Under 15 min? |
+|---|---:|---:|---:|---:|---:|:---:|
+| `1_kilo` | 96 | [TBD] | [TBD] | [TBD] | [TBD] | [TBD] |
+| `2_mega` | 96 | [TBD] | [TBD] | [TBD] | [TBD] | [TBD] |
+| `3_giga` | 96 | [TBD] | [TBD] | [TBD] | [TBD] | [TBD] |
+| `4_tera` | 96 | [TBD] | [TBD] | [TBD] | [TBD] | [TBD] |
+| `5_peta` | 96 | [TBD] | [TBD] | [TBD] | [TBD] | [TBD] |
+| `6_exa` | 96 | [TBD] | [TBD] | [TBD] | [TBD] | [TBD] |
 
 ### 5.2 Scaling Results
 
-| Pair | 1 thread (serial) | 2 | 4 | 8 | 16 | 32 | 64 | 96 |
+The thread-scaling experiment uses the `1_kilo` pair and three sequential
+repetitions at each thread count. Times below are [TBD] total
+search times in seconds.
+
+| Pair | 1 thread | 2 | 4 | 8 | 16 | 32 | 64 | 96 |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|
-| `1_kilo` | [TBD] | [TBD] | [TBD] | [TBD] | [TBD] | [TBD] | [TBD] | [TBD] |
-| `2_mega` | [TBD] | [TBD] | [TBD] | [TBD] | [TBD] | [TBD] | [TBD] | [TBD] |
-| `3_giga` | [TBD] | [TBD] | [TBD] | [TBD] | [TBD] | [TBD] | [TBD] | [TBD] |
-| `4_tera` | [TBD] | [TBD] | [TBD] | [TBD] | [TBD] | [TBD] | [TBD] | [TBD] |
-| `5_peta` | [TBD] | [TBD] | [TBD] | [TBD] | [TBD] | [TBD] | [TBD] | [TBD] |
-| `6_exa` | [TBD] | [TBD] | [TBD] | [TBD] | [TBD] | [TBD] | [TBD] | [TBD] |
+| `1_kilo` total time (s) | [TBD] | [TBD] | [TBD] | [TBD] | [TBD] | [TBD] | [TBD] | [TBD] |
 
-Times are in seconds. **Speedup and efficiency:** [TBD: calculate speedup
-relative to one thread, discuss scaling across thread counts, and identify
-where performance stops scaling.]
+**Speedup and efficiency:** Speedup is calculated relative to the one-thread
+mean: \(S_T=[TBD]\). Parallel efficiency is \(E_T=[TBD]\). The point where
+additional threads stop producing useful speedup is [TBD].
 
-**Difficulty comparison:** [TBD: compare the six pairs, relate their observed
-trial counts and times to the expected birthday-attack behaviour, and explain
-any variation caused by random collision location or implementation effects.]
+**Difficulty comparison:** At 96 threads, the slowest pair is [TBD] and the
+fastest pair is [TBD]. The results show [TBD] relationship between PDF size and
+per-trial cost. Any non-monotonic ordering is explained by [TBD] variation in
+the Phase B stopping position and system noise.
 
-**Performance conclusion:** [TBD: state the best configuration, the slowest
-pair, the maximum observed speedup, and whether the 15-minute requirement was
-met for every pair.]
+**Performance conclusion:** The best measured configuration is [TBD]. The
+maximum observed speedup is [TBD], and all six pairs [TBD] the 15-minute
+per-pair requirement.
 
 ## 6. Conclusion
 
 The project demonstrates a birthday attack against a weak 48-bit hash and a
-parallel implementation using OpenMP. [TBD: summarise the final algorithm,
-synchronization design, memory trade-off, and measured performance in two or
-three sentences.]
+parallel implementation using OpenMP. [TBD]
