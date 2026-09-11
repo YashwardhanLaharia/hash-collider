@@ -28,14 +28,14 @@ either solved file.
 **Collision table:** Each open-addressing entry stores a hash, its file-A
 nonce, and an occupancy flag. A multiplicative index is masked by
 `capacity - 1`, so capacities are powers of two; collisions use linear
-probing. The serial table has `2^25` entries for `2^24` A trials, limiting its
+probing. The serial table has $2^{25}$ entries for $2^{24}$ A trials, limiting its
 planned load to 50% and reducing probe lengths.
 
-**Search ranges:** Phase A hashes nonces zero through `2^24 - 1`. With that
-table, the expected B probes before a match are `2^24`, giving approximately
-`2^25` total hash calls. Phase B searches in consecutive `8 * 2^24`-nonce
+**Search ranges:** Phase A hashes nonces zero through $2^{24} - 1$. With that
+table, the expected B probes before a match are $2^{24}$, giving approximately
+$2^{25}$ total hash calls. Phase B searches in consecutive $8 \times 2^{24}$-nonce
 batches while reusing the A table. The first batch has expected cross-match
-count eight and success probability `1 - e^-8 = 99.97%`; if needed, searching
+count eight and success probability $1 - e^{-8} = 99.97%$; if needed, searching
 continues with the next non-overlapping batch until a match or exhaustion of
 the 64-bit nonce space.
 
@@ -46,7 +46,7 @@ parallelises independent nonce trials rather than the sequential operations
 inside each `toy_hash` call.
 
 **Work assignment:** Phase A uses `omp for schedule(static)`, assigning each
-nonce once. Phase B uses guided scheduling over fixed `2^16`-nonce chunks so
+nonce once. Phase B uses guided scheduling over fixed $2^{16}$-nonce chunks so
 threads can stop between chunks after a collision is found. Hashes are routed
 to one of `T` partitions using `hash % T`, where `T` is the actual OpenMP team
 size. Each partition is sized to the next power of two at least twice its
@@ -65,7 +65,7 @@ section, although phase-A hashes targeting the same partition can contend.
 Static scheduling has low overhead in Phase A because trials perform similar
 work; guided scheduling in Phase B helps manage early termination.
 
-**Termination:** Phase B assigns `2^16`-nonce chunks. Threads check atomic
+**Termination:** Phase B assigns $2^{16}$-nonce chunks. Threads check atomic
 `found` within each chunk and stop hashing after a winner publishes the
 solution. After the worksharing barrier, one thread updates `stop_search`; the
 implicit `single` barrier makes every thread enter and leave each batch
@@ -74,11 +74,11 @@ consistently, avoiding divergent worksharing control flow.
 ## 4. Memory Usage and Trade-offs
 
 The table dominates memory use. On the target 64-bit build, alignment makes
-each entry 24 bytes. The serial `2^25`-entry table therefore occupies
+each entry 24 bytes. The serial $2^{25}$-entry table therefore occupies
 805,306,368 bytes (768 MiB), excluding two working PDF copies.
 
 In parallel, each of `T` partitions has capacity
-`next_power_of_two(2 * ceil(2^24 / T))`. At 96 threads this is `2^19` entries
+`next_power_of_two(2 * ceil(2^24 / T))`. At 96 threads this is $2^{19}$ entries
 per partition, or 1.125 GiB of table storage. Each thread also owns two PDF
 buffers, making file size relevant to total memory.
 
