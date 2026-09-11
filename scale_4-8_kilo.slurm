@@ -1,10 +1,9 @@
 #!/bin/bash
-#SBATCH --job-name=scale_kilo
+#SBATCH --job-name=scale_4-8_kilo
 #SBATCH --partition=cits3402
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
-#SBATCH --cpus-per-task=96
-#SBATCH --exclusive
+#SBATCH --cpus-per-task=8
 #SBATCH --mem=8G
 #SBATCH --time=02:00:00
 #SBATCH --output=scale_kilo_%j.out
@@ -21,7 +20,7 @@ make clean && make || {
 
 export OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK
 
-for threads in 16 32 64 96; do
+for threads in 4 8; do
     for repetition in 1 2 3; do
         echo "=== 1_kilo: ${threads} threads, repetition ${repetition} ==="
 
