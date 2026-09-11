@@ -120,9 +120,17 @@ The thread-scaling experiment uses the `1_kilo` pair and three sequential
 repetitions at each thread count. Times below are [TBD] total
 search times in seconds.
 
-| Pair | 1 thread | 2 | 4 | 8 | 16 | 32 | 64 | 96 |
-|---|---:|---:|---:|---:|---:|---:|---:|---:|
-| `1_kilo` total time (s) | [TBD] | [TBD] | [TBD] | [TBD] | [TBD] | [TBD] | [TBD] | [TBD] |
+| Threads | Phase A Mean (s) | Phase B Mean (s) | Total Mean (s) |
+| --- | --- | --- | --- |
+| 1 | [TBD] | [TBD] | [TBD] |
+| 2 | [TBD] | [TBD] | [TBD] |
+| 4 | [TBD] | [TBD] | [TBD] | 
+| 8 | [TBD] | [TBD] | [TBD] |
+| 16 | [TBD] | [TBD] | [TBD] |
+| 32 | [TBD] | [TBD] | [TBD] |
+| 64 | [TBD] | [TBD] | [TBD] |
+| 96 | [TBD] | [TBD] | [TBD] |
+
 
 **Speedup and efficiency:** Speedup is calculated relative to the one-thread
 mean: \(S_T=[TBD]\). Parallel efficiency is \(E_T=[TBD]\). The point where
