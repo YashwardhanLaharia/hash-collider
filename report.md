@@ -112,6 +112,8 @@ for the 15-minute check.
 | `5_peta` | 96 | 84.81 | 158.20 | 243.14 | 243.17 | Yes |
 | `6_exa` | 96 | 158.83 | 415.98 | 574.95 | 575.49 | Yes |
 
+![96-Thread Benchmark: Phase A & Phase B Execution Time by Difficulty](figures/benchmark_96.png)
+
 ### 5.2 Scaling Results
 
 The thread-scaling experiment uses the `1_kilo` pair and three sequential
