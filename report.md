@@ -99,18 +99,18 @@ expected trial count is governed by the 48-bit collision probability.
 
 ### 5.1 Completion Results
 
-The completion table reports the mean of [TBD] runs at 96 threads. Phase A,
+The completion table reports the mean of 3 runs at 96 threads. Phase A,
 Phase B, and total times are measured by the program; the maximum total is used
 for the 15-minute check.
 
 | Pair | Threads | Phase A mean (s) | Phase B mean (s) | Total mean (s) | Maximum total (s) | Under 15 min? |
-|---|---:|---:|---:|---:|---:|:---:|
-| `1_kilo` | 96 | [TBD] | [TBD] | [TBD] | [TBD] | [TBD] |
-| `2_mega` | 96 | [TBD] | [TBD] | [TBD] | [TBD] | [TBD] |
-| `3_giga` | 96 | [TBD] | [TBD] | [TBD] | [TBD] | [TBD] |
-| `4_tera` | 96 | [TBD] | [TBD] | [TBD] | [TBD] | [TBD] |
-| `5_peta` | 96 | [TBD] | [TBD] | [TBD] | [TBD] | [TBD] |
-| `6_exa` | 96 | [TBD] | [TBD] | [TBD] | [TBD] | [TBD] |
+| --- | --- | --- | --- | --- | --- | --- |
+| `1_kilo` | 96 | 11.72 | 4.27 | 16.11 | 16.12 | Yes |
+| `2_mega` | 96 | 22.94 | 25.41 | 48.47 | 48.49 | Yes |
+| `3_giga` | 96 | 39.82 | 14.80 | 54.75 | 54.75 | Yes |
+| `4_tera` | 96 | 59.50 | 22.17 | 81.81 | 81.82 | Yes |
+| `5_peta` | 96 | 84.81 | 158.20 | 243.14 | 243.17 | Yes |
+| `6_exa` | 96 | 158.83 | 415.98 | 574.95 | 575.49 | Yes |
 
 ### 5.2 Scaling Results
 
