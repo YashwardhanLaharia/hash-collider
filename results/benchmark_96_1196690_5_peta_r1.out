@@ -1,0 +1,5 @@
+files/5_peta_a.pdf : 0x0000000000f801cd d2c65ad43663
+files/5_peta_b.pdf : 0x0000000003ed815d d2c65ad43663
+Phase A: 84.814138 seconds
+Phase B: 158.130805 seconds
+Total time: 243.078099 seconds

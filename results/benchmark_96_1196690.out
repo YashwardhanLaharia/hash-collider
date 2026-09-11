@@ -1,0 +1,117 @@
+rm -f collider src/main.o src/pdf_io.o src/table.o src/attack_serial.o src/attack_parallel.o src/toy_hash.o
+gcc -O3 -std=c11 -Wall -Wextra -pedantic -fopenmp -c -o src/main.o src/main.c
+gcc -O3 -std=c11 -Wall -Wextra -pedantic -fopenmp -c -o src/pdf_io.o src/pdf_io.c
+gcc -O3 -std=c11 -Wall -Wextra -pedantic -fopenmp -c -o src/table.o src/table.c
+gcc -O3 -std=c11 -Wall -Wextra -pedantic -fopenmp -c -o src/attack_serial.o src/attack_serial.c
+gcc -O3 -std=c11 -Wall -Wextra -pedantic -fopenmp -c -o src/attack_parallel.o src/attack_parallel.c
+gcc -O3 -std=c11 -Wall -Wextra -pedantic -fopenmp -c -o src/toy_hash.o src/toy_hash.c
+gcc -fopenmp -o collider src/main.o src/pdf_io.o src/table.o src/attack_serial.o src/attack_parallel.o src/toy_hash.o
+=== repetition 1: 1_kilo pair ===
+files/1_kilo_a.pdf : 0x000000000069cf37 762c985f9971
+files/1_kilo_b.pdf : 0x0000000005283290 762c985f9971
+Phase A: 11.712593 seconds
+Phase B: 4.271352 seconds
+Total time: 16.103039 seconds
+=== repetition 1: 2_mega pair ===
+files/2_mega_a.pdf : 0x000000000010db72 bfe4714e7f45
+files/2_mega_b.pdf : 0x0000000000f9644c bfe4714e7f45
+Phase A: 22.928231 seconds
+Phase B: 25.420633 seconds
+Total time: 48.471996 seconds
+=== repetition 1: 3_giga pair ===
+files/3_giga_a.pdf : 0x00000000000716ad a8ccc13427b5
+files/3_giga_b.pdf : 0x00000000006b12f4 a8ccc13427b5
+Phase A: 39.818618 seconds
+Phase B: 14.794142 seconds
+Total time: 54.740356 seconds
+=== repetition 1: 4_tera pair ===
+files/4_tera_a.pdf : 0x00000000003484b2 3a207a45f8fb
+files/4_tera_b.pdf : 0x0000000003d19658 3a207a45f8fb
+Phase A: 59.507088 seconds
+Phase B: 22.187228 seconds
+Total time: 81.824217 seconds
+=== repetition 1: 5_peta pair ===
+files/5_peta_a.pdf : 0x0000000000f801cd d2c65ad43663
+files/5_peta_b.pdf : 0x0000000003ed815d d2c65ad43663
+Phase A: 84.814138 seconds
+Phase B: 158.130805 seconds
+Total time: 243.078099 seconds
+=== repetition 1: 6_exa pair ===
+files/6_exa_a.pdf : 0x000000000095b2e8 1e4f13bce782
+files/6_exa_b.pdf : 0x000000000086a00f 1e4f13bce782
+Phase A: 159.073673 seconds
+Phase B: 415.661652 seconds
+Total time: 574.878694 seconds
+=== repetition 2: 1_kilo pair ===
+files/1_kilo_a.pdf : 0x000000000069cf37 762c985f9971
+files/1_kilo_b.pdf : 0x0000000005283290 762c985f9971
+Phase A: 11.736810 seconds
+Phase B: 4.260202 seconds
+Total time: 16.117644 seconds
+=== repetition 2: 2_mega pair ===
+files/2_mega_a.pdf : 0x000000000010db72 bfe4714e7f45
+files/2_mega_b.pdf : 0x0000000000f9644c bfe4714e7f45
+Phase A: 22.951678 seconds
+Phase B: 25.412288 seconds
+Total time: 48.489413 seconds
+=== repetition 2: 3_giga pair ===
+files/3_giga_a.pdf : 0x00000000000716ad a8ccc13427b5
+files/3_giga_b.pdf : 0x00000000006b12f4 a8ccc13427b5
+Phase A: 39.810904 seconds
+Phase B: 14.814361 seconds
+Total time: 54.754018 seconds
+=== repetition 2: 4_tera pair ===
+files/4_tera_a.pdf : 0x00000000003484b2 3a207a45f8fb
+files/4_tera_b.pdf : 0x0000000003d19658 3a207a45f8fb
+Phase A: 59.490385 seconds
+Phase B: 22.162377 seconds
+Total time: 81.782451 seconds
+=== repetition 2: 5_peta pair ===
+files/5_peta_a.pdf : 0x0000000000f801cd d2c65ad43663
+files/5_peta_b.pdf : 0x0000000003ed815d d2c65ad43663
+Phase A: 84.836781 seconds
+Phase B: 158.201049 seconds
+Total time: 243.172193 seconds
+=== repetition 2: 6_exa pair ===
+files/6_exa_a.pdf : 0x000000000095b2e8 1e4f13bce782
+files/6_exa_b.pdf : 0x000000000086a00f 1e4f13bce782
+Phase A: 158.728773 seconds
+Phase B: 415.602859 seconds
+Total time: 574.477280 seconds
+=== repetition 3: 1_kilo pair ===
+files/1_kilo_a.pdf : 0x000000000069cf37 762c985f9971
+files/1_kilo_b.pdf : 0x0000000005283290 762c985f9971
+Phase A: 11.711359 seconds
+Phase B: 4.263451 seconds
+Total time: 16.095370 seconds
+=== repetition 3: 2_mega pair ===
+files/2_mega_a.pdf : 0x000000000010db72 bfe4714e7f45
+files/2_mega_b.pdf : 0x0000000000f9644c bfe4714e7f45
+Phase A: 22.931929 seconds
+Phase B: 25.394630 seconds
+Total time: 48.449358 seconds
+=== repetition 3: 3_giga pair ===
+files/3_giga_a.pdf : 0x00000000000716ad a8ccc13427b5
+files/3_giga_b.pdf : 0x00000000006b12f4 a8ccc13427b5
+Phase A: 39.826430 seconds
+Phase B: 14.794529 seconds
+Total time: 54.747865 seconds
+=== repetition 3: 4_tera pair ===
+files/4_tera_a.pdf : 0x00000000003484b2 3a207a45f8fb
+files/4_tera_b.pdf : 0x0000000003d19658 3a207a45f8fb
+Phase A: 59.511711 seconds
+Phase B: 22.172066 seconds
+Total time: 81.815553 seconds
+=== repetition 3: 5_peta pair ===
+files/5_peta_a.pdf : 0x0000000000f801cd d2c65ad43663
+files/5_peta_b.pdf : 0x0000000003ed815d d2c65ad43663
+Phase A: 84.774293 seconds
+Phase B: 158.260880 seconds
+Total time: 243.173069 seconds
+=== repetition 3: 6_exa pair ===
+files/6_exa_a.pdf : 0x000000000095b2e8 1e4f13bce782
+files/6_exa_b.pdf : 0x000000000086a00f 1e4f13bce782
+Phase A: 158.673310 seconds
+Phase B: 416.663125 seconds
+Total time: 575.493453 seconds
+96-thread benchmark complete.

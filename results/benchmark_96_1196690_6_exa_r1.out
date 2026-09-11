@@ -1,0 +1,5 @@
+files/6_exa_a.pdf : 0x000000000095b2e8 1e4f13bce782
+files/6_exa_b.pdf : 0x000000000086a00f 1e4f13bce782
+Phase A: 159.073673 seconds
+Phase B: 415.661652 seconds
+Total time: 574.878694 seconds
