@@ -13,11 +13,11 @@ hashes using OpenMP and a partitioned table.
 
 ## 2. Birthday-Attack Algorithm
 
-Assuming independent, approximately uniform outputs, sets containing \(N_A\)
-and \(N_B\) hashes have cross-match probability
-\(1-e^{-N_A N_B/2^{48}}\). Equal sets reach 50% probability at
-\(N_A=N_B=\sqrt{\ln(2)2^{48}}\approx1.40\times10^7\), or about
-\(2.79\times10^7\) total hashes. The actual collision location for each input
+Assuming independent, approximately uniform outputs, sets containing $N_A$
+and $N_B$ hashes have cross-match probability
+$1-e^{-N_A N_B/2^{48}}$. Equal sets reach 50% probability at
+$N_A=N_B=\sqrt{\ln(2)2^{48}}\approx1.40\times10^7$, or about
+$2.79\times10^7$ total hashes. The actual collision location for each input
 pair is fixed because the implementation searches deterministic nonce ranges.
 
 Phase A inserts `(hash, nonce_a)` pairs into a collision table. Phase B
@@ -133,7 +133,7 @@ search times in seconds.
 
 
 **Speedup and efficiency:** Speedup is calculated relative to the one-thread
-mean: \(S_T=[TBD]\). Parallel efficiency is \(E_T=[TBD]\). The point where
+mean: $S_T=[TBD]$. Parallel efficiency is $E_T=[TBD]$. The point where
 additional threads stop producing useful speedup is [TBD].
 
 **Difficulty comparison:** At 96 threads, the slowest pair is [TBD] and the
