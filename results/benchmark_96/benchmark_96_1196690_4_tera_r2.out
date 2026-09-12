@@ -1,0 +1,5 @@
+files/4_tera_a.pdf : 0x00000000003484b2 3a207a45f8fb
+files/4_tera_b.pdf : 0x0000000003d19658 3a207a45f8fb
+Phase A: 59.490385 seconds
+Phase B: 22.162377 seconds
+Total time: 81.782451 seconds

@@ -1,0 +1,45 @@
+rm -f collider src/main.o src/pdf_io.o src/table.o src/attack_serial.o src/attack_parallel.o src/toy_hash.o
+gcc -O3 -std=c11 -Wall -Wextra -pedantic -fopenmp -c -o src/main.o src/main.c
+gcc -O3 -std=c11 -Wall -Wextra -pedantic -fopenmp -c -o src/pdf_io.o src/pdf_io.c
+gcc -O3 -std=c11 -Wall -Wextra -pedantic -fopenmp -c -o src/table.o src/table.c
+gcc -O3 -std=c11 -Wall -Wextra -pedantic -fopenmp -c -o src/attack_serial.o src/attack_serial.c
+gcc -O3 -std=c11 -Wall -Wextra -pedantic -fopenmp -c -o src/attack_parallel.o src/attack_parallel.c
+gcc -O3 -std=c11 -Wall -Wextra -pedantic -fopenmp -c -o src/toy_hash.o src/toy_hash.c
+gcc -fopenmp -o collider src/main.o src/pdf_io.o src/table.o src/attack_serial.o src/attack_parallel.o src/toy_hash.o
+=== 1_kilo: 4 threads, repetition 1 ===
+files/1_kilo_a.pdf : 0x000000000069cf37 762c985f9971
+files/1_kilo_b.pdf : 0x0000000005283290 762c985f9971
+Phase A: 271.289401 seconds
+Phase B: 579.501596 seconds
+Total time: 850.849120 seconds
+=== 1_kilo: 4 threads, repetition 2 ===
+files/1_kilo_a.pdf : 0x000000000069cf37 762c985f9971
+files/1_kilo_b.pdf : 0x0000000005283290 762c985f9971
+Phase A: 271.028628 seconds
+Phase B: 578.844699 seconds
+Total time: 849.931874 seconds
+=== 1_kilo: 4 threads, repetition 3 ===
+files/1_kilo_a.pdf : 0x000000000069cf37 762c985f9971
+files/1_kilo_b.pdf : 0x0000000005283290 762c985f9971
+Phase A: 271.014820 seconds
+Phase B: 578.937226 seconds
+Total time: 850.010567 seconds
+=== 1_kilo: 8 threads, repetition 1 ===
+files/1_kilo_a.pdf : 0x000000000069cf37 762c985f9971
+files/1_kilo_b.pdf : 0x0000000005283290 762c985f9971
+Phase A: 207.928707 seconds
+Phase B: 320.999476 seconds
+Total time: 528.985960 seconds
+=== 1_kilo: 8 threads, repetition 2 ===
+files/1_kilo_a.pdf : 0x000000000069cf37 762c985f9971
+files/1_kilo_b.pdf : 0x0000000005283290 762c985f9971
+Phase A: 223.518216 seconds
+Phase B: 554.076626 seconds
+Total time: 777.666995 seconds
+=== 1_kilo: 8 threads, repetition 3 ===
+files/1_kilo_a.pdf : 0x000000000069cf37 762c985f9971
+files/1_kilo_b.pdf : 0x0000000005283290 762c985f9971
+Phase A: 187.858374 seconds
+Phase B: 321.026349 seconds
+Total time: 508.942258 seconds
+Scaling test complete.

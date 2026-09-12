@@ -1,0 +1,81 @@
+rm -f collider src/main.o src/pdf_io.o src/table.o src/attack_serial.o src/attack_parallel.o src/toy_hash.o
+gcc -O3 -std=c11 -Wall -Wextra -pedantic -fopenmp -c -o src/main.o src/main.c
+gcc -O3 -std=c11 -Wall -Wextra -pedantic -fopenmp -c -o src/pdf_io.o src/pdf_io.c
+gcc -O3 -std=c11 -Wall -Wextra -pedantic -fopenmp -c -o src/table.o src/table.c
+gcc -O3 -std=c11 -Wall -Wextra -pedantic -fopenmp -c -o src/attack_serial.o src/attack_serial.c
+gcc -O3 -std=c11 -Wall -Wextra -pedantic -fopenmp -c -o src/attack_parallel.o src/attack_parallel.c
+gcc -O3 -std=c11 -Wall -Wextra -pedantic -fopenmp -c -o src/toy_hash.o src/toy_hash.c
+gcc -fopenmp -o collider src/main.o src/pdf_io.o src/table.o src/attack_serial.o src/attack_parallel.o src/toy_hash.o
+=== 1_kilo: 16 threads, repetition 1 ===
+files/1_kilo_a.pdf : 0x00000000002ebe69 4194cb63c1fb
+files/1_kilo_b.pdf : 0x00000000043bcb0d 4194cb63c1fb
+Phase A: 68.585020 seconds
+Phase B: 169.500209 seconds
+Total time: 238.167514 seconds
+=== 1_kilo: 16 threads, repetition 2 ===
+files/1_kilo_a.pdf : 0x00000000002ebe69 4194cb63c1fb
+files/1_kilo_b.pdf : 0x00000000043bcb0d 4194cb63c1fb
+Phase A: 68.588116 seconds
+Phase B: 169.704058 seconds
+Total time: 238.375072 seconds
+=== 1_kilo: 16 threads, repetition 3 ===
+files/1_kilo_a.pdf : 0x00000000002ebe69 4194cb63c1fb
+files/1_kilo_b.pdf : 0x00000000043bcb0d 4194cb63c1fb
+Phase A: 68.665665 seconds
+Phase B: 169.527430 seconds
+Total time: 238.260878 seconds
+=== 1_kilo: 32 threads, repetition 1 ===
+files/1_kilo_a.pdf : 0x0000000000abb4d5 00274a25f8ca
+files/1_kilo_b.pdf : 0x0000000001a9f892 00274a25f8ca
+Phase A: 34.429892 seconds
+Phase B: 63.542834 seconds
+Total time: 98.050973 seconds
+=== 1_kilo: 32 threads, repetition 2 ===
+files/1_kilo_a.pdf : 0x0000000000abb4d5 00274a25f8ca
+files/1_kilo_b.pdf : 0x0000000001a9f892 00274a25f8ca
+Phase A: 34.390703 seconds
+Phase B: 63.538916 seconds
+Total time: 98.007421 seconds
+=== 1_kilo: 32 threads, repetition 3 ===
+files/1_kilo_a.pdf : 0x0000000000abb4d5 00274a25f8ca
+files/1_kilo_b.pdf : 0x0000000001a9f892 00274a25f8ca
+Phase A: 34.428873 seconds
+Phase B: 63.569972 seconds
+Total time: 98.075795 seconds
+=== 1_kilo: 64 threads, repetition 1 ===
+files/1_kilo_a.pdf : 0x00000000002ebe69 4194cb63c1fb
+files/1_kilo_b.pdf : 0x00000000043bcb0d 4194cb63c1fb
+Phase A: 17.309188 seconds
+Phase B: 50.848861 seconds
+Total time: 68.235699 seconds
+=== 1_kilo: 64 threads, repetition 2 ===
+files/1_kilo_a.pdf : 0x00000000002ebe69 4194cb63c1fb
+files/1_kilo_b.pdf : 0x00000000043bcb0d 4194cb63c1fb
+Phase A: 17.311700 seconds
+Phase B: 50.877400 seconds
+Total time: 68.267010 seconds
+=== 1_kilo: 64 threads, repetition 3 ===
+files/1_kilo_a.pdf : 0x00000000002ebe69 4194cb63c1fb
+files/1_kilo_b.pdf : 0x00000000043bcb0d 4194cb63c1fb
+Phase A: 17.320272 seconds
+Phase B: 50.853407 seconds
+Total time: 68.252425 seconds
+=== 1_kilo: 96 threads, repetition 1 ===
+files/1_kilo_a.pdf : 0x000000000069cf37 762c985f9971
+files/1_kilo_b.pdf : 0x0000000005283290 762c985f9971
+Phase A: 11.710599 seconds
+Phase B: 4.247856 seconds
+Total time: 16.076628 seconds
+=== 1_kilo: 96 threads, repetition 2 ===
+files/1_kilo_a.pdf : 0x000000000069cf37 762c985f9971
+files/1_kilo_b.pdf : 0x0000000005283290 762c985f9971
+Phase A: 11.737481 seconds
+Phase B: 4.261240 seconds
+Total time: 16.118512 seconds
+=== 1_kilo: 96 threads, repetition 3 ===
+files/1_kilo_a.pdf : 0x000000000069cf37 762c985f9971
+files/1_kilo_b.pdf : 0x0000000005283290 762c985f9971
+Phase A: 11.717129 seconds
+Phase B: 4.268582 seconds
+Total time: 16.104588 seconds
+Scaling test complete.

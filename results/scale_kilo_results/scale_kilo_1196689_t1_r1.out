@@ -1,0 +1,5 @@
+files/1_kilo_a.pdf : 0x0000000000cab08f 39c991010b31
+files/1_kilo_b.pdf : 0x0000000000cd32e6 39c991010b31
+Phase A: 1083.944672 seconds
+Phase B: 867.525281 seconds
+Total time: 1951.530173 seconds
