@@ -2,6 +2,9 @@
 *.a
 *.so
 *.exe
+*.out
+*.err
+*.pdf
 toy_hash
 collider
 build/
