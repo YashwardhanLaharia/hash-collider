@@ -23,7 +23,6 @@ ax.bar(x, phase_b, width, bottom=phase_a, label="Phase B (Collision Search)", co
 
 # 15-minute threshold line
 ax.axhline(900, color="#d9383a", linestyle="--", linewidth=1.5, alpha=0.8, label="15-minute Limit (900 s)")
-ax.text(len(pairs) - 0.5, 915, "15 min cutoff (900s)", color="#d9383a", fontweight="bold", fontsize=9, ha="right")
 
 # Annotate total times above each bar
 for i, tot in enumerate(total):
