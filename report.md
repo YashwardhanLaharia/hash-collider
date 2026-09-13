@@ -5,16 +5,16 @@
 
 ## 1. Introduction
 
-The program applies a birthday attack to find PDF nonces that collide under
-the supplied 48-bit `toy_hash`. It builds a table of hashes for file A, then
-searches file B for a matching hash. The parallel implementation uses OpenMP,
-partitioned open-addressing tables, and per-partition locks during insertion.
-
 **Overall result:** All six supplied PDF pairs were solved and independently
 verified with 96 OpenMP threads. Mean total times ranged from 16.11 s for
 `1_kilo` to 574.95 s for `6_exa`; the largest individual run was 575.49 s,
 below the 900-second per-pair limit. The fixed-work Phase A measurements also
 showed strong scaling to 96 threads, reaching a measured speedup of 92.38x.
+
+The implementation uses a birthday attack against the supplied 48-bit
+`toy_hash`: it stores file-A hashes, searches file B for a match, and
+parallelises the search with OpenMP using partitioned open-addressing tables
+and per-partition locks during insertion.
 
 ## 2. Birthday-Attack Algorithm
 
@@ -72,11 +72,12 @@ Static scheduling has low overhead in Phase A because trials perform similar
 work. Guided scheduling in Phase B balances the chunk-level work while still
 allowing the search to stop after a collision.
 
-**Termination:** Phase B assigns $2^{16}$-nonce chunks. Threads check atomic
-`found` within each chunk and stop hashing after a winner publishes the
-solution. After the worksharing barrier, one thread updates `stop_search`; the
-implicit `single` barrier makes every thread enter and leave each batch
-consistently, avoiding divergent worksharing control flow.
+**Termination:** Phase B assigns fixed $2^{16}$-nonce chunks. Threads check the
+atomic `found` flag before starting each chunk. If a collision is found while
+chunks are already in progress, those chunks continue to completion; chunks
+not yet started can be skipped. After the worksharing barrier, one thread sets
+`stop_search`, and the implicit `single` barrier ensures that all threads leave
+the batch consistently without starting another batch.
 
 ## 4. Memory Usage and Trade-offs
 
@@ -94,7 +95,10 @@ add Phase A synchronization but enable one lock-free Phase B lookup. Reusing
 the A table for further B batches increases search time without increasing
 table memory. The Slurm benchmark requests 8 GiB on one exclusive node, so
 the approximately 1.125 GiB parallel table leaves room for the working PDF
-buffers and other process overhead.
+buffers and other process overhead. Under the approximately uniform hash-output
+assumption, `hash % T` should distribute entries reasonably evenly across
+partitions, avoiding the need for dynamic table rebalancing; this distribution
+was not measured directly in the recorded runs.
 
 ## 5. Performance Results and Analysis
 
@@ -148,28 +152,28 @@ work because Phase B stops at the first collision.
 
 ![Thread Scaling Benchmark (1_kilo): Phase A & Phase B Execution Time](figures/scaling_kilo.png)
 
-**Speedup and Efficiency:** Speedup is calculated as $S_T=T_1/T_T$, and
-fixed-work efficiency is most meaningfully assessed using Phase A. At 96
-threads, Phase A reaches 92.38x speedup and 96.2% efficiency. Its speedup is
-close to linear through the measured range. Total-time speedups are included
-for context, but they should not be interpreted as fixed-work efficiencies:
-the 2-thread run is faster than the 4-thread run because it found a collision
-earlier, while the 96-thread run found one particularly early. This explains
-the apparent total-time efficiencies above 100% and the non-monotonic totals.
+**Scaling interpretation and conclusion:** Speedup is calculated as
+$S_T=T_1/T_T$, and fixed-work efficiency is most meaningfully assessed using
+Phase A. Phase A scales close to linearly, reaching 92.38x speedup and 96.2%
+efficiency at 96 threads. The 8-thread Phase-A result is a notable dip, with
+substantially greater run-to-run variation than the neighbouring thread
+counts. Those measurements came from a non-exclusive Slurm job, so co-located
+resource contention is a plausible contributor, although the recorded data do
+not prove that cause. Total-time speedups are included for context, but they
+are not fixed-work efficiencies: Phase B stops at the first collision, so the
+2-thread run can beat the 4-thread run and the 96-thread result can appear
+superlinear. The 121.13x value is therefore a variable-work total-time ratio,
+not a fixed-work parallel speedup. The best measured scaling configuration is
+96 threads for `1_kilo`; the six-pair completion benchmark also used 96
+threads, and all six pairs met the 15-minute requirement.
 
 **Difficulty comparison:** At 96 threads, the slowest pair is `6_exa` and the
 fastest pair is `1_kilo`. Phase A time increases with the input size, showing
-that hashing larger PDFs costs more per trial. Phase B time is not monotonic:
-it depends primarily on where the first matching hash occurs and on scheduling
-overhead, rather than only on PDF size.
-
-**Performance conclusion:** The best measured configuration in the scaling
-experiment is 96 threads for `1_kilo`, and the six-pair completion benchmark
-was also run at 96 threads. The strongest fixed-work result is Phase A's
-92.38x speedup at 96 threads. The 121.13x figure is only a variable-work
-total-time ratio relative to the one-thread scaling mean: it includes a
-different early-exit depth in Phase B and is not a fixed-work parallel
-speedup. All six pairs met the 15-minute per-pair requirement.
+that hashing larger PDFs costs more per trial. This follows directly from
+`toy_hash`'s byte-wise loop, which gives each trial $O(L)$ hash cost for a PDF
+of length $L$. Phase B time is not monotonic: it depends primarily on where
+the first matching hash occurs and on scheduling overhead, rather than only
+on PDF size.
 
 ## 6. Conclusion
 

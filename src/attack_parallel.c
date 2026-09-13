@@ -10,12 +10,12 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define TRIAL_COUNT (UINT64_C(1) << 24)
+#define TRIAL_COUNT (UINT64_C(1) << 24) /* Fixed Phase-A trials. */
 #define STUDENT_ID "24295462"
 /* Progress output is opt-in so benchmark runs remain quiet by default. */
 #define PROGRESS_INTERVAL (UINT64_C(1) << 16)
-#define B_BATCH_SIZE (UINT64_C(8) * TRIAL_COUNT)
-#define B_CHUNK_SIZE (UINT64_C(1) << 16)
+#define B_BATCH_SIZE (UINT64_C(8) * TRIAL_COUNT) /* B search range per batch. */
+#define B_CHUNK_SIZE (UINT64_C(1) << 16) /* Smallest early-exit work unit. */
 #define B_CHUNK_COUNT (B_BATCH_SIZE / B_CHUNK_SIZE)
 
 #define CACHE_LINE 64
@@ -172,6 +172,8 @@ int birthday_attack_parallel(const unsigned char *file_a, size_t length_a,
                     uint64_t offset_b;
                     uint64_t progress;
 
+                    /* A chunk already in progress is allowed to finish; only
+                       chunks not yet started can observe this early exit. */
                     if (atomic_load(&found)) {
                         continue;
                     }

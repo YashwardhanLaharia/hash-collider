@@ -9,9 +9,9 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define TRIAL_COUNT (UINT64_C(1) << 24)
-#define B_BATCH_SIZE (UINT64_C(8) * TRIAL_COUNT)
-#define TABLE_CAPACITY (UINT64_C(1) << 25)
+#define TRIAL_COUNT (UINT64_C(1) << 24) /* Fixed Phase-A trials. */
+#define B_BATCH_SIZE (UINT64_C(8) * TRIAL_COUNT) /* B search range per batch. */
+#define TABLE_CAPACITY (UINT64_C(1) << 25) /* 50% planned load factor. */
 #define STUDENT_ID "24295462"
 /* Progress output is opt-in so benchmark runs remain quiet by default. */
 #define PROGRESS_INTERVAL (UINT64_C(1) << 16)

@@ -4,7 +4,7 @@ import os
 
 os.makedirs("figures", exist_ok=True)
 
-pairs = ["1_kilo\n(64 KB)", "2_mega\n(128 KB)", "3_giga\n(224 KB)", "4_tera\n(336 KB)", "5_peta\n(480 KB)", "6_exa\n(900 KB)"]
+pairs = ["1_kilo\n(64 KiB)", "2_mega\n(128 KiB)", "3_giga\n(224 KiB)", "4_tera\n(336 KiB)", "5_peta\n(480 KiB)", "6_exa\n(900 KiB)"]
 phase_a = [11.72, 22.94, 39.82, 59.50, 84.81, 158.83]
 phase_b = [4.27, 25.41, 14.80, 22.17, 158.20, 415.98]
 total = [a + b for a, b in zip(phase_a, phase_b)]
