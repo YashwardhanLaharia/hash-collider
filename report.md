@@ -13,7 +13,7 @@ partitioned open-addressing tables, and per-partition locks during insertion.
 **Overall result:** All six supplied PDF pairs were solved and independently
 verified with 96 OpenMP threads. Mean total times ranged from 16.11 s for
 `1_kilo` to 574.95 s for `6_exa`; the largest individual run was 575.49 s,
-below the 900-second per-pair limit. The fixed-work Phase-A measurements also
+below the 900-second per-pair limit. The fixed-work Phase A measurements also
 showed strong scaling to 96 threads, reaching a measured speedup of 92.38x.
 
 ## 2. Birthday-Attack Algorithm
@@ -90,7 +90,7 @@ per partition, or 1.125 GiB of table storage. Each thread also owns two PDF
 buffers, making file size relevant to total memory.
 
 The 50% planned load spends memory to shorten linear probes. Partition locks
-add Phase-A synchronization but enable one lock-free Phase-B lookup. Reusing
+add Phase A synchronization but enable one lock-free Phase B lookup. Reusing
 the A table for further B batches increases search time without increasing
 table memory. The Slurm benchmark requests 8 GiB on one exclusive node, so
 the approximately 1.125 GiB parallel table leaves room for the working PDF
@@ -99,12 +99,14 @@ buffers and other process overhead.
 ## 5. Performance Results and Analysis
 
 Timing covers the complete attack routine, including table setup and cleanup,
-but excludes input loading, final verification, and output writing. Benchmark
-runs omit optional `--progress` reporting and its synchronization overhead.
-Measurements used one exclusive node in the Kaya `cits3402` partition, GCC
-14.3.0 with OpenMP (`-O3 -std=c11 -Wall -Wextra -pedantic -fopenmp`), three
-repetitions, and the arithmetic mean as the summary statistic. Input loading,
-final verification, and output writing were outside the reported search time.
+but excludes input loading, final verification, and output writing.
+Each Slurm job requested one node in the Kaya `cits3402` partition. The
+96-thread benchmark and the 16/32/64/96-thread scaling job requested exclusive
+nodes; the separate 1-thread, 2-thread, and 4/8-thread scaling jobs did not
+request exclusivity. The jobs loaded GCC 14.3.0 and built with OpenMP (`-O3 -std=c11
+-Wall -Wextra -pedantic -fopenmp`). Each pair/thread-count combination was run
+three times. The `.out` files contain individual-run timings; the arithmetic
+means in the report tables were calculated afterward from those recorded runs.
 Because every trial hashes the complete PDF, larger inputs should cost more
 per trial even though the expected number of trials is governed by the 48-bit
 collision probability.
@@ -115,14 +117,14 @@ The completion table reports the mean of three runs at 96 threads. Phase A,
 Phase B, and total times are measured by the program. The maximum individual
 total is included for the 15-minute check.
 
-| Pair | Phase A mean (s) | Phase B mean (s) | Total mean (s) | Maximum total (s) | Under 15 min? |
-| --- | ---: | ---: | ---: | ---: | :---: |
-| `1_kilo` | 11.72 | 4.27 | 16.11 | 16.12 | Yes |
-| `2_mega` | 22.94 | 25.41 | 48.47 | 48.49 | Yes |
-| `3_giga` | 39.82 | 14.80 | 54.75 | 54.75 | Yes |
-| `4_tera` | 59.50 | 22.17 | 81.81 | 81.82 | Yes |
-| `5_peta` | 84.81 | 158.20 | 243.14 | 243.17 | Yes |
-| `6_exa` | 158.83 | 415.98 | 574.95 | 575.49 | Yes |
+| Pair | Phase A Mean (s) | Phase B Mean (s) | Total Mean (s) | Maximum Total (s) |
+| --- | ---: | ---: | ---: | ---: |
+| `1_kilo` | 11.72 | 4.27 | 16.11 | 16.12 |
+| `2_mega` | 22.94 | 25.41 | 48.47 | 48.49 |
+| `3_giga` | 39.82 | 14.80 | 54.75 | 54.75 |
+| `4_tera` | 59.50 | 22.17 | 81.81 | 81.82 |
+| `5_peta` | 84.81 | 158.20 | 243.14 | 243.17 |
+| `6_exa` | 158.83 | 415.98 | 574.95 | 575.49 |
 
 ![96-Thread Benchmark: Phase A & Phase B Execution Time by Difficulty](figures/benchmark_96.png)
 
@@ -146,7 +148,7 @@ work because Phase B stops at the first collision.
 
 ![Thread Scaling Benchmark (1_kilo): Phase A & Phase B Execution Time](figures/scaling_kilo.png)
 
-**Speedup and efficiency:** Speedup is calculated as $S_T=T_1/T_T$, and
+**Speedup and Efficiency:** Speedup is calculated as $S_T=T_1/T_T$, and
 fixed-work efficiency is most meaningfully assessed using Phase A. At 96
 threads, Phase A reaches 92.38x speedup and 96.2% efficiency. Its speedup is
 close to linear through the measured range. Total-time speedups are included
@@ -156,24 +158,25 @@ earlier, while the 96-thread run found one particularly early. This explains
 the apparent total-time efficiencies above 100% and the non-monotonic totals.
 
 **Difficulty comparison:** At 96 threads, the slowest pair is `6_exa` and the
-fastest pair is `1_kilo`. Phase-A time increases with the input size, showing
-that hashing larger PDFs costs more per trial. Phase-B time is not monotonic:
+fastest pair is `1_kilo`. Phase A time increases with the input size, showing
+that hashing larger PDFs costs more per trial. Phase B time is not monotonic:
 it depends primarily on where the first matching hash occurs and on scheduling
 overhead, rather than only on PDF size.
 
 **Performance conclusion:** The best measured configuration in the scaling
 experiment is 96 threads for `1_kilo`, and the six-pair completion benchmark
 was also run at 96 threads. The strongest fixed-work result is Phase A's
-92.38x speedup at 96 threads. The maximum observed total-time ratio is 121.13x
-relative to the one-thread scaling mean, but it includes different early-exit
-work in Phase B. All six pairs met the 15-minute per-pair requirement.
+92.38x speedup at 96 threads. The 121.13x figure is only a variable-work
+total-time ratio relative to the one-thread scaling mean: it includes a
+different early-exit depth in Phase B and is not a fixed-work parallel
+speedup. All six pairs met the 15-minute per-pair requirement.
 
 ## 6. Conclusion
 
 The project demonstrates a birthday attack against a weak 48-bit hash and a
 parallel implementation using OpenMP. The partitioned open-addressing table
-keeps Phase-A insertion safe with padded per-partition locks and makes Phase-B
-lookups lock-free after the barrier. The measured Phase-A speedup reached
+keeps Phase A insertion safe with padded per-partition locks and makes Phase B
+lookups lock-free after the barrier. The measured Phase A speedup reached
 92.38x at 96 threads, while the six supplied pairs all produced verified
 collisions within the 15-minute requirement. Total-time scaling is less
 regular because Phase B terminates at the first collision found; therefore,
