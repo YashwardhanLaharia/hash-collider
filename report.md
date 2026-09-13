@@ -1,18 +1,12 @@
-# Brute-Forcing `toy_hash` Collisions with OpenMP
+# CITS3402 Assignment 1 Report
 
-**Author:** Yashwardhan Laharia  
-**Student ID:** 24295462
+| Yashwardhan Laharia | 24295462 |
+| --- | --- |
 
 ## 1. Introduction
 
-**Overall result:** All six supplied PDF pairs were solved and independently
-verified with 96 OpenMP threads. Mean total times ranged from 16.11 s for
-`1_kilo` to 574.95 s for `6_exa`; the largest individual run was 575.49 s,
-below the 900-second per-pair limit. The fixed-work Phase A measurements also
-showed strong scaling to 96 threads, reaching a measured speedup of 92.38x.
-
-The implementation uses a birthday attack against the supplied 48-bit
-`toy_hash`: it stores file-A hashes, searches file B for a match, and
+This project demonstrates my attempt at a birthday attack against the supplied 48-bit
+toy hash: it stores file-A hashes, searches file B for a match, and
 parallelises the search with OpenMP using partitioned open-addressing tables
 and per-partition locks during insertion.
 
@@ -22,7 +16,7 @@ Assuming independent, approximately uniform outputs, sets containing $N_A$
 and $N_B$ hashes have cross-match probability
 $1-e^{-N_A N_B/2^{48}}$. Equal sets reach 50% probability at
 $N_A=N_B=\sqrt{\ln(2)2^{48}}\approx1.40\times10^7$, or about
-$2.79\times10^7$ total hashes. This is a probabilistic expectation, not a
+$2.79\times10^7$ total hashes. This is a probabilistic expectation and not a
 fixed amount of work: the first matching pair depends on the input files and,
 in the parallel case, on which scheduled chunk finds a match first.
 
@@ -48,7 +42,7 @@ $1-e^{-8}=99.97\%$; if needed, the next non-overlapping batch is searched.
 
 The serial attack is the correctness and speedup baseline. The OpenMP version
 parallelises independent nonce trials rather than the sequential operations
-inside each `toy_hash` call.
+inside each toy hash call.
 
 **Work assignment:** Phase A uses `omp for schedule(static)`, assigning each
 nonce once. Phase B uses `schedule(guided)` over fixed $2^{16}$-nonce chunks.
@@ -93,27 +87,23 @@ buffers, making file size relevant to total memory.
 The 50% planned load spends memory to shorten linear probes. Partition locks
 add Phase A synchronization but enable one lock-free Phase B lookup. Reusing
 the A table for further B batches increases search time without increasing
-table memory. The Slurm benchmark requests 8 GiB on one exclusive node, so
-the approximately 1.125 GiB parallel table leaves room for the working PDF
-buffers and other process overhead. Under the approximately uniform hash-output
-assumption, `hash % T` should distribute entries reasonably evenly across
-partitions, avoiding the need for dynamic table rebalancing; this distribution
-was not measured directly in the recorded runs.
+table memory. Under the approximately uniform hash-output assumption used by
+the birthday-attack analysis, `hash % T` is expected to distribute entries
+evenly across partitions. This allows fixed-capacity partitions and separate
+locks without dynamic rebalancing, while retaining the memory cost of the
+50% load target.
 
 ## 5. Performance Results and Analysis
 
-Timing covers the complete attack routine, including table setup and cleanup,
-but excludes input loading, final verification, and output writing.
-Each Slurm job requested one node in the Kaya `cits3402` partition. The
-96-thread benchmark and the 16/32/64/96-thread scaling job requested exclusive
-nodes; the separate 1-thread, 2-thread, and 4/8-thread scaling jobs did not
-request exclusivity. The jobs loaded GCC 14.3.0 and built with OpenMP (`-O3 -std=c11
--Wall -Wextra -pedantic -fopenmp`). Each pair/thread-count combination was run
-three times. The `.out` files contain individual-run timings; the arithmetic
-means in the report tables were calculated afterward from those recorded runs.
-Because every trial hashes the complete PDF, larger inputs should cost more
-per trial even though the expected number of trials is governed by the 48-bit
-collision probability.
+The reported time covers the attack routine, including table setup and cleanup,
+but excludes input loading, final verification, and output writing. Experiments
+were run on Kaya's `cits3402` partition with GCC 14.3.0 and OpenMP at `-O3`.
+The completion benchmark used 96 threads on an exclusive node. For scaling,
+each configuration ran on a single node. The runs with 16, 32, 64, and 96
+threads requested exclusive nodes; the runs with 1, 2, 4, and 8 threads did
+not, avoiding reservation of a full node for these low-thread-count runs.
+Each configuration was run three times, and the tables report arithmetic means
+of the recorded timings.
 
 ### 5.1 Completion Results
 
@@ -130,7 +120,7 @@ total is included for the 15-minute check.
 | `5_peta` | 84.81 | 158.20 | 243.14 | 243.17 |
 | `6_exa` | 158.83 | 415.98 | 574.95 | 575.49 |
 
-![96-Thread Benchmark: Phase A & Phase B Execution Time by Difficulty](figures/benchmark_96.png)
+<img src="figures/benchmark_96.png" alt="96-thread benchmark: Phase A and Phase B execution time by difficulty" style="max-width: 100%; height: auto;">
 
 ### 5.2 Scaling Results
 
@@ -139,41 +129,50 @@ repetitions at each thread count. The table reports arithmetic means in
 seconds. Phase A is a fixed $2^{24}$-trial workload; total time is not fixed
 work because Phase B stops at the first collision.
 
-| Threads | Phase A Mean (s) | Phase B Mean (s) | Total Mean (s) | Phase A Speedup | Total Speedup |
-| ---: | ---: | ---: | ---: | ---: | ---: |
-| 1 | 1082.85 | 867.23 | 1950.13 | 1.00 | 1.00 |
-| 2 | 545.35 | 254.31 | 799.73 | 1.99 | 2.44 |
-| 4 | 271.11 | 579.09 | 850.26 | 3.99 | 2.29 |
-| 8 | 206.44 | 398.70 | 605.20 | 5.25 | 3.22 |
-| 16 | 68.61 | 169.58 | 238.27 | 15.78 | 8.18 |
-| 32 | 34.42 | 63.55 | 98.04 | 31.46 | 19.89 |
-| 64 | 17.31 | 50.86 | 68.25 | 62.54 | 28.57 |
-| 96 | 11.72 | 4.26 | 16.10 | 92.38 | 121.13 |
+| Threads <br>$p$ | Phase A Mean (s)<br>$A_p$ | Phase B Mean (s) | Total Mean (s)<br> $T_p$ | Phase A Speedup<br>$S_A=A_1/A_p$ | Total Speedup<br>$S_{\mathrm{total}}=T_1/T_p$ | Phase A Efficiency<br>$E_A=(S_A/p)\times 100$ |
+| ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| 1 | 1082.85 | 867.23 | 1950.13 | 1.00 | 1.00 | 100.0 |
+| 2 | 545.35 | 254.31 | 799.73 | 1.99 | 2.44 | 99.3 |
+| 4 | 271.11 | 579.09 | 850.26 | 3.99 | 2.29 | 99.9 |
+| 8 | 206.44 | 398.70 | 605.20 | 5.25 | 3.22 | 65.6 |
+| 16 | 68.61 | 169.58 | 238.27 | 15.78 | 8.18 | 98.6 |
+| 32 | 34.42 | 63.55 | 98.04 | 31.46 | 19.89 | 98.3 |
+| 64 | 17.31 | 50.86 | 68.25 | 62.54 | 28.57 | 97.7 |
+| 96 | 11.72 | 4.26 | 16.10 | 92.38 | 121.13 | 96.2 |
 
-![Thread Scaling Benchmark (1_kilo): Phase A & Phase B Execution Time](figures/scaling_kilo.png)
+<img src="figures/scaling_kilo.png" alt="Thread scaling benchmark for 1_kilo: Phase A and Phase B execution time" style="max-width: 100%; height: auto;">
 
-**Scaling interpretation and conclusion:** Speedup is calculated as
-$S_T=T_1/T_T$, and fixed-work efficiency is most meaningfully assessed using
-Phase A. Phase A scales close to linearly, reaching 92.38x speedup and 96.2%
-efficiency at 96 threads. The 8-thread Phase-A result is a notable dip, with
-substantially greater run-to-run variation than the neighbouring thread
-counts. Those measurements came from a non-exclusive Slurm job, so co-located
-resource contention is a plausible contributor, although the recorded data do
-not prove that cause. Total-time speedups are included for context, but they
-are not fixed-work efficiencies: Phase B stops at the first collision, so the
-2-thread run can beat the 4-thread run and the 96-thread result can appear
-superlinear. The 121.13x value is therefore a variable-work total-time ratio,
-not a fixed-work parallel speedup. The best measured scaling configuration is
-96 threads for `1_kilo`; the six-pair completion benchmark also used 96
-threads, and all six pairs met the 15-minute requirement.
+### 5.3 Analysis
 
-**Difficulty comparison:** At 96 threads, the slowest pair is `6_exa` and the
-fastest pair is `1_kilo`. Phase A time increases with the input size, showing
-that hashing larger PDFs costs more per trial. This follows directly from
-`toy_hash`'s byte-wise loop, which gives each trial $O(L)$ hash cost for a PDF
-of length $L$. Phase B time is not monotonic: it depends primarily on where
-the first matching hash occurs and on scheduling overhead, rather than only
-on PDF size.
+**Parallel Scaling and Efficiency:**
+Phase A performs exactly $2^{24}$ hash operations in a successful run, thus
+it provides the clearest fixed-work measure of parallel speedup and efficiency. As shown in Table 5.2, Phase A
+shows strong scaling up to 96 threads, achieving a 92.38x speedup and 96.2%
+parallel efficiency. Across most core allocations,
+partition-level locking introduces negligible overhead.
+The prominent anomaly occurs at 8 threads, where efficiency drops sharply to 65.6% (5.25x speedup)
+accompanied by high run-to-run variance. I did not request exclusive nodes for runs below 16 threads; shared-node contention _may_ have
+contributed rather than an algorithmic lock bottleneck.
+
+**Total Runtime and Search Variability:**
+In contrast to Phase A, total attack time encompasses early-exit termination
+in Phase B. When an active thread locates a collision, pending iterations
+complete their $2^{16}$-nonce chunks before halting, but remaining batches
+are skipped. Consequently, total-time ratios reflect both thread throughput
+and the statistical fortune of when a collision appears within the search
+space. This variable exit depth explains why 2 threads outpaced 4 threads, as
+well as the apparent superlinear total speedup of 121.13x at 96 threads.
+
+**Workload Difficulty and Input Scaling:**
+Across file difficulties at 96 threads, Phase A runtime scales monotonically
+with document size, rising from 11.72 s for `1_kilo` to 158.83 s for `6_exa`.
+Because `toy_hash` processes input sequentially, each nonce trial carries an
+$\mathcal{O}(L)$ computational cost for a document of length $L$. Conversely,
+Phase B times fluctuate non-monotonically (e.g., 14.80 s for `3_giga` versus
+25.41 s for `2_mega`) because search depth is governed by the approximately
+uniform output model for the 48-bit hash rather than document length alone. All
+pairs successfully converged well within the required 15-minute threshold, with
+`6_exa` peaking at 575.49 s.
 
 ## 6. Conclusion
 
