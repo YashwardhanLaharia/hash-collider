@@ -9,7 +9,10 @@ The program applies a birthday attack to find PDF nonces that collide under
 the supplied 48-bit `toy_hash`. It stores file-A hashes, then searches file-B
 hashes using OpenMP and a partitioned table.
 
-**Overall result:** [TBD]
+**Overall result:** All six supplied PDF pairs were solved and independently
+verified with 96 OpenMP threads. The mean total times ranged from 16.11 s for
+`1_kilo` to 574.95 s for `6_exa`; the largest individual run was 575.49 s,
+below the 900-second per-pair limit.
 
 ## 2. Birthday-Attack Algorithm
 
@@ -18,7 +21,8 @@ and $N_B$ hashes have cross-match probability
 $1-e^{-N_A N_B/2^{48}}$. Equal sets reach 50% probability at
 $N_A=N_B=\sqrt{\ln(2)2^{48}}\approx1.40\times10^7$, or about
 $2.79\times10^7$ total hashes. The actual collision location for each input
-pair is fixed because the implementation searches deterministic nonce ranges.
+pair can vary with thread count and scheduling because Phase B stops when any
+thread finds a match, even though each search uses deterministic nonce ranges.
 
 Phase A inserts `(hash, nonce_a)` pairs into a collision table. Phase B
 generates `(hash, nonce_b)` pairs and queries that table. A match supplies the
@@ -92,8 +96,9 @@ table memory.
 Timing covers the complete attack routine, including table setup and cleanup,
 but excludes input loading, final verification, and output writing. Benchmark
 runs omit optional `--progress` reporting and its synchronization overhead.
-Measurements used [TBD] Kaya node, [TBD] compiler/OpenMP configuration,
-[TBD] repetitions, and the [TBD] summary statistic. Because every trial hashes
+Measurements used one node in the Kaya `cits3402` partition, GCC 14.3.0 with
+OpenMP (`-O3 -std=c11 -Wall -Wextra -pedantic -fopenmp`), three repetitions,
+and the arithmetic mean as the summary statistic. Because every trial hashes
 the complete PDF, larger inputs should cost more per trial even though the
 expected trial count is governed by the 48-bit collision probability.
 
@@ -103,49 +108,68 @@ The completion table reports the mean of 3 runs at 96 threads. Phase A,
 Phase B, and total times are measured by the program; the maximum total is used
 for the 15-minute check.
 
-| Pair | Threads | Phase A mean (s) | Phase B mean (s) | Total mean (s) | Maximum total (s) | Under 15 min? |
-| --- | --- | --- | --- | --- | --- | --- |
-| `1_kilo` | 96 | 11.72 | 4.27 | 16.11 | 16.12 | Yes |
-| `2_mega` | 96 | 22.94 | 25.41 | 48.47 | 48.49 | Yes |
-| `3_giga` | 96 | 39.82 | 14.80 | 54.75 | 54.75 | Yes |
-| `4_tera` | 96 | 59.50 | 22.17 | 81.81 | 81.82 | Yes |
-| `5_peta` | 96 | 84.81 | 158.20 | 243.14 | 243.17 | Yes |
-| `6_exa` | 96 | 158.83 | 415.98 | 574.95 | 575.49 | Yes |
+| Pair | Phase A mean (s) | Phase B mean (s) | Total mean (s) |
+| --- | --- | --- | --- |
+| 1_kilo | 11.72 | 4.27 | 16.11 |
+| 2_mega | 22.94 | 25.41 | 48.47 |
+| 3_giga | 39.82 | 14.80 | 54.75 |
+| 4_tera | 59.50 | 22.17 | 81.81 |
+| 5_peta | 84.81 | 158.20 | 243.14 |
+| 6_exa | 158.83 | 415.98 | 574.95 |
 
 ![96-Thread Benchmark: Phase A & Phase B Execution Time by Difficulty](figures/benchmark_96.png)
 
 ### 5.2 Scaling Results
 
 The thread-scaling experiment uses the `1_kilo` pair and three sequential
-repetitions at each thread count. Times below are [TBD] total
+repetitions at each thread count. Times below are arithmetic-mean total
 search times in seconds.
 
 | Threads | Phase A Mean (s) | Phase B Mean (s) | Total Mean (s) |
 | --- | --- | --- | --- |
-| 1 | [TBD] | [TBD] | [TBD] |
-| 2 | [TBD] | [TBD] | [TBD] |
-| 4 | [TBD] | [TBD] | [TBD] | 
-| 8 | [TBD] | [TBD] | [TBD] |
-| 16 | [TBD] | [TBD] | [TBD] |
-| 32 | [TBD] | [TBD] | [TBD] |
-| 64 | [TBD] | [TBD] | [TBD] |
-| 96 | [TBD] | [TBD] | [TBD] |
+| 1 | 1082.85 | 867.23 | 1950.13 |
+| 2 | 545.35 | 254.31 | 799.73 |
+| 4 | 271.11 | 579.09 | 850.26 |
+| 8 | 206.44 | 398.70 | 605.20 |
+| 16 | 68.61 | 169.58 | 238.27 |
+| 32 | 34.42 | 63.55 | 98.04 |
+| 64 | 17.31 | 50.86 | 68.25 |
+| 96 | 11.72 | 4.26 | 16.10 |
 
+![Thread Scaling Benchmark (1_kilo): Phase A & Phase B Execution Time](figures/scaling_kilo.png)
 
-**Speedup and efficiency:** Speedup is calculated relative to the one-thread
-mean: $S_T=[TBD]$. Parallel efficiency is $E_T=[TBD]$. The point where
-additional threads stop producing useful speedup is [TBD].
+**Speedup and efficiency:** Speedup is calculated from the mean total time
+relative to the one-thread mean, $S_T=T_1/T_T$. For 1, 2, 4, 8, 16, 32, 64,
+and 96 threads, the speedups are respectively 1.00, 2.44, 2.29, 3.22, 8.18,
+19.89, 28.57, and 121.13. The corresponding efficiencies, $E_T=S_T/T$,
+are 100.0%, 121.9%, 57.3%, 40.3%, 51.2%, 62.2%, 44.6%, and 126.2%.
+These total-time values include variable early termination in Phase B, so
+efficiencies above 100% are not evidence of superlinear fixed-work scaling.
+The measured range does not reach a sustained scaling plateau, although the
+4-thread result is slower than the 2-thread result because it found a later
+collision and Phase B does not perform a fixed amount of work.
 
-**Difficulty comparison:** At 96 threads, the slowest pair is [TBD] and the
-fastest pair is [TBD]. The results show [TBD] relationship between PDF size and
-per-trial cost. Any non-monotonic ordering is explained by [TBD] variation in
+**Difficulty comparison:** At 96 threads, the slowest pair is `6_exa` and the
+fastest pair is `1_kilo`. The results show an approximately increasing
+relationship between PDF size and Phase-A per-trial cost. Any non-monotonic
+ordering is explained by random-looking variation in
 the Phase B stopping position and system noise.
 
-**Performance conclusion:** The best measured configuration is [TBD]. The
-maximum observed speedup is [TBD], and all six pairs [TBD] the 15-minute
-per-pair requirement.
+**Performance conclusion:** The best measured configuration in the scaling
+experiment is 96 threads for `1_kilo`; the six-pair completion benchmark was
+also run at 96 threads. The maximum observed total-time ratio relative to the
+one-thread scaling mean is 121.13x, although this comparison includes different
+early-exit work in Phase B. All six pairs met the 15-minute per-pair
+requirement.
 
 ## 6. Conclusion
 
 The project demonstrates a birthday attack against a weak 48-bit hash and a
-parallel implementation using OpenMP. [TBD]
+parallel implementation using OpenMP. A partitioned open-addressing table,
+per-partition locks during insertion, and lock-free lookups after the phase
+barrier provide the collision search structure. Across the recorded Kaya runs,
+all six supplied pairs produced verified collisions within the 15-minute
+requirement at 96 threads. The scaling results show strong Phase-A speedup,
+while total-time comparisons must be interpreted with care because Phase B
+terminates at the first collision found and therefore does not have identical
+work across thread counts.
